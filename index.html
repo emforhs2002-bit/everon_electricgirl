@@ -1,0 +1,2225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전기요금 검증 시스템 · everon</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --everon-blue: #16ACE3;
+    --everon-blue-soft: #e8f7fd;
+    --everon-blue-hover: #0f95c7;
+    --everon-dark: #1F2A44;
+    --everon-dark-soft: #2d3a5c;
+    --bg: #f7f9fb;
+    --surface: #ffffff;
+    --border: #e5e9f0;
+    --border-strong: #cfd6e0;
+    --text: #1F2A44;
+    --text-soft: #5c6680;
+    --text-muted: #9aa4b8;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --warn: #d97706;
+    --warn-bg: #fffbeb;
+    --ok: #059669;
+    --ok-bg: #ecfdf5;
+    --info: var(--everon-blue);
+    --info-bg: var(--everon-blue-soft);
+    --shadow-sm: 0 1px 2px rgba(31, 42, 68, 0.04);
+    --shadow-md: 0 4px 16px rgba(31, 42, 68, 0.08);
+    --shadow-lg: 0 12px 32px rgba(31, 42, 68, 0.12);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); font-feature-settings: 'ss06', 'tnum'; -webkit-font-smoothing: antialiased; line-height: 1.5; height: 100%; overflow: hidden; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+  a { color: var(--everon-blue); text-decoration: none; }
+
+  .everon-logo { display: inline-flex; align-items: center; font-weight: 300; letter-spacing: -0.02em; }
+  .everon-logo .ever { color: transparent; -webkit-text-stroke: 1.2px var(--everon-blue); font-style: italic; font-family: 'Pretendard Variable'; font-weight: 300; }
+  .everon-logo .on-pill { display: inline-flex; align-items: center; justify-content: center; background: var(--everon-blue); color: white; border-radius: 999px; padding: 0 0.35em; margin-left: -0.15em; font-style: italic; font-weight: 400; }
+
+  .login-screen { position: fixed; inset: 0; z-index: 1000; background: linear-gradient(135deg, #e8f7fd 0%, #ffffff 50%, #f0f8fc 100%); display: flex; align-items: center; justify-content: center; padding: 20px; overflow: hidden; }
+  .login-screen.hidden { display: none; }
+  .login-screen::before { content: ''; position: absolute; top: -300px; right: -300px; width: 700px; height: 700px; border-radius: 50%; background: radial-gradient(circle, rgba(22,172,227,0.12) 0%, transparent 70%); pointer-events: none; }
+  .login-screen::after { content: ''; position: absolute; bottom: -200px; left: -200px; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(31,42,68,0.08) 0%, transparent 70%); pointer-events: none; }
+  .login-card { background: var(--surface); border-radius: 20px; padding: 48px 44px; max-width: 420px; width: 100%; box-shadow: var(--shadow-lg); position: relative; z-index: 1; border: 1px solid var(--border); }
+  .login-logo { font-size: 36px; margin-bottom: 4px; }
+  .login-title { font-size: 20px; font-weight: 700; margin-top: 24px; letter-spacing: -0.03em; }
+  .login-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; margin-bottom: 32px; }
+  .login-field { margin-bottom: 14px; }
+  .login-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-soft); margin-bottom: 6px; letter-spacing: -0.01em; }
+  .login-field input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 14px; font-family: inherit; transition: all 0.15s; background: var(--surface); }
+  .login-field input:focus { outline: none; border-color: var(--everon-blue); box-shadow: 0 0 0 4px rgba(22,172,227,0.1); }
+  .login-btn { width: 100%; padding: 13px; background: var(--everon-blue); color: white; border-radius: var(--radius-md); font-size: 14px; font-weight: 700; margin-top: 20px; transition: all 0.15s; }
+  .login-btn:hover { background: var(--everon-blue-hover); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(22,172,227,0.3); }
+  .login-err { color: var(--danger); font-size: 12px; margin-top: 10px; text-align: center; min-height: 16px; font-weight: 500; }
+  .login-foot { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 28px; }
+
+  .app { display: flex; flex-direction: column; height: 100vh; }
+  .app.hidden { display: none; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .topbar-left { display: flex; align-items: center; gap: 14px; }
+  .topbar-logo { font-size: 22px; }
+  .topbar-title { font-size: 13px; font-weight: 600; color: var(--text-soft); padding-left: 14px; border-left: 1px solid var(--border); }
+  .topbar-right { display: flex; align-items: center; gap: 6px; }
+  .topbar-user { font-size: 12px; color: var(--text-muted); padding: 0 12px; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-soft); font-size: 16px; transition: all 0.15s; }
+  .icon-btn:hover { background: var(--bg); color: var(--everon-blue); }
+  .icon-btn.danger:hover { color: var(--danger); }
+
+  .workspace { display: flex; flex: 1; overflow: hidden; }
+  .sidebar { width: 232px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 12px; overflow-y: auto; flex-shrink: 0; }
+  .nav-group { margin-bottom: 20px; }
+  .nav-group-title { font-size: 10px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; padding: 0 12px 8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text-soft); cursor: pointer; transition: all 0.12s; margin-bottom: 2px; position: relative; }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active { background: var(--everon-blue-soft); color: var(--everon-blue); font-weight: 700; }
+  .nav-item.active::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: var(--everon-blue); border-radius: 0 2px 2px 0; }
+  .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+  .nav-badge { margin-left: auto; background: var(--danger); color: white; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; min-width: 20px; text-align: center; }
+  .nav-badge.zero { background: #cfd6e0; color: var(--text-soft); }
+  .nav-badge.warn { background: var(--warn); }
+
+  .main-content { flex: 1; overflow-y: auto; padding: 28px 32px; background: var(--bg); }
+  .page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+  .card-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-size: 14px; font-weight: 700; }
+  .card-body { padding: 20px; }
+  .card-pad { padding: 24px; }
+
+  .dash-hero { background: linear-gradient(135deg, var(--everon-dark) 0%, var(--everon-dark-soft) 100%); color: white; border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 20px; position: relative; overflow: hidden; }
+  .dash-hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, rgba(22,172,227,0.3) 0%, transparent 70%); }
+  .dash-hero-label { font-size: 11px; font-weight: 700; opacity: 0.7; letter-spacing: 0.08em; text-transform: uppercase; }
+  .dash-hero-value { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; margin-top: 6px; }
+  .dash-hero-sub { font-size: 13px; opacity: 0.75; margin-top: 4px; }
+
+  .dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px 20px; transition: all 0.15s; }
+  .stat-card:hover { border-color: var(--everon-blue); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .stat-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; }
+  .stat-value { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-top: 6px; }
+  .stat-value.danger { color: var(--danger); }
+  .stat-value.warn { color: var(--warn); }
+  .stat-value.ok { color: var(--ok); }
+  .stat-value.blue { color: var(--everon-blue); }
+  .stat-sub { font-size: 12px; color: var(--text-soft); margin-top: 4px; }
+
+  .dash-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .chart-box { height: 240px; position: relative; }
+
+  .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  .dropzone { border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 28px 20px; background: var(--surface); text-align: center; transition: all 0.2s; cursor: pointer; position: relative; }
+  .dropzone:hover { border-color: var(--everon-blue); background: var(--everon-blue-soft); }
+  .dropzone.active { border-color: var(--everon-blue); background: var(--everon-blue-soft); border-style: solid; }
+  .dropzone.filled { border-style: solid; border-color: var(--ok); background: var(--ok-bg); }
+  .dropzone-icon { width: 40px; height: 40px; margin: 0 auto 10px; color: var(--text-muted); }
+  .dropzone.filled .dropzone-icon { color: var(--ok); }
+  .dropzone-tag { display: inline-block; font-size: 10px; font-weight: 700; color: var(--everon-blue); background: var(--everon-blue-soft); padding: 3px 10px; border-radius: 4px; margin-bottom: 10px; letter-spacing: 0.05em; }
+  .dropzone-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .dropzone-desc { font-size: 12px; color: var(--text-muted); }
+  .dropzone-file { font-size: 12px; color: var(--ok); font-weight: 600; margin-top: 10px; word-break: break-all; }
+  .dropzone input[type=file] { display: none; }
+  .dropzone-clear { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: 50%; background: white; border: 1px solid var(--border); font-size: 12px; display: none; align-items: center; justify-content: center; line-height: 1; }
+  .dropzone.filled .dropzone-clear { display: flex; }
+
+  .action-bar { display: flex; gap: 10px; justify-content: space-between; align-items: center; }
+  .btn { padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--everon-blue); color: white; padding: 11px 22px; font-weight: 700; }
+  .btn-primary:hover:not(:disabled) { background: var(--everon-blue-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondary { background: var(--surface); color: var(--text-soft); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--bg); border-color: var(--border-strong); color: var(--text); }
+  .btn-outline { background: transparent; color: var(--everon-blue); border: 1px solid var(--everon-blue); }
+  .btn-outline:hover { background: var(--everon-blue-soft); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .sum-card { padding: 18px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); }
+  .sum-card.critical { background: var(--danger-bg); border-color: #fecaca; }
+  .sum-card.warning { background: var(--warn-bg); border-color: #fde68a; }
+  .sum-card.good { background: var(--ok-bg); border-color: #a7f3d0; }
+  .sum-card.info { background: var(--everon-blue-soft); border-color: #b9e2f5; }
+  .sum-label { font-size: 12px; font-weight: 700; color: var(--text-soft); }
+  .sum-card.critical .sum-label { color: var(--danger); }
+  .sum-card.warning .sum-label { color: var(--warn); }
+  .sum-card.good .sum-label { color: var(--ok); }
+  .sum-card.info .sum-label { color: var(--everon-blue); }
+  .sum-value { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; }
+  .sum-sub { font-size: 12px; color: var(--text-soft); margin-top: 2px; }
+
+  .issue-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+  .issue-table th { text-align: left; padding: 10px 12px; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 1; }
+  .issue-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .issue-table tr:hover { background: var(--bg); }
+  .issue-row.critical td:first-child { border-left: 3px solid var(--danger); }
+  .issue-row.warning td:first-child { border-left: 3px solid var(--warn); }
+  .issue-row.info td:first-child { border-left: 3px solid var(--everon-blue); }
+  .issue-code { font-weight: 700; font-size: 12px; }
+  .issue-code.critical { color: var(--danger); }
+  .issue-code.warning { color: var(--warn); }
+  .issue-code.info { color: var(--everon-blue); }
+  .issue-col { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .issue-detail { color: var(--text-soft); font-size: 12px; line-height: 1.6; }
+  .issue-cust { font-family: 'SF Mono', Menlo, monospace; font-size: 12px; color: var(--text-soft); }
+  .issue-addr { font-size: 12px; color: var(--text-soft); max-width: 320px; }
+  .issue-diff { font-family: 'SF Mono', Menlo, monospace; font-size: 12px; }
+  .diff-plus { color: var(--danger); }
+  .diff-minus { color: var(--everon-blue); }
+
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-title { font-size: 15px; font-weight: 600; color: var(--text-soft); margin-bottom: 6px; }
+  .empty-sub { font-size: 12px; }
+
+  .modal-bg { position: fixed; inset: 0; background: rgba(31, 42, 68, 0.5); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(2px); }
+  .modal-bg.active { display: flex; }
+  .modal { background: white; border-radius: 16px; max-width: 600px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+  .modal.wide { max-width: 900px; }
+  .modal-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 1; }
+  .modal-head h2 { font-size: 16px; }
+  .modal-body { padding: 24px; }
+  .modal-close { width: 32px; height: 32px; border-radius: 8px; font-size: 18px; color: var(--text-muted); }
+  .modal-close:hover { background: var(--bg); color: var(--text); }
+
+  .setting-group { margin-bottom: 24px; }
+  .setting-group:last-child { margin-bottom: 0; }
+  .setting-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .setting-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+  .setting-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-row label { font-size: 13px; flex: 1; }
+  .setting-row input, .setting-row select { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit; }
+  .setting-row input { width: 110px; text-align: right; }
+  .setting-row input:focus, .setting-row select:focus { outline: none; border-color: var(--everon-blue); box-shadow: 0 0 0 3px rgba(22,172,227,0.1); }
+  .setting-row .unit { font-size: 12px; color: var(--text-muted); width: 44px; }
+
+  .history-item { padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+  .history-month { font-weight: 700; }
+  .history-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .history-del { color: var(--danger); font-size: 12px; }
+
+  .processing { position: fixed; inset: 0; background: rgba(255,255,255,0.92); display: none; align-items: center; justify-content: center; z-index: 200; flex-direction: column; gap: 14px; backdrop-filter: blur(3px); }
+  .processing.active { display: flex; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--everon-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .processing-text { font-size: 14px; font-weight: 600; color: var(--text-soft); }
+  .processing-sub { font-size: 12px; color: var(--text-muted); margin-top: -6px; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--everon-dark); color: white; padding: 12px 20px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); z-index: 300; opacity: 0; transition: all 0.3s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+  .toast.error { background: var(--danger); }
+  .toast.success { background: var(--ok); }
+
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.04em; }
+  .tag.blue { background: var(--everon-blue-soft); color: var(--everon-blue); }
+  .tag.gray { background: var(--bg); color: var(--text-soft); }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #d0d7e0; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #b0bac8; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .dash-grid { grid-template-columns: repeat(2, 1fr); }
+    .dash-row { grid-template-columns: 1fr; }
+    .upload-grid { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="everon-logo login-logo"><span class="ever">ever</span><span class="on-pill">on</span></div>
+    <div class="login-title">전기요금 검증 시스템</div>
+    <div class="login-sub">에버온 × 한전 청구서 교차검증 도구</div>
+    <div class="login-field"><label>아이디</label><input type="text" id="loginId" autocomplete="username"></div>
+    <div class="login-field"><label>비밀번호</label><input type="password" id="loginPw" autocomplete="current-password" onkeydown="if(event.key==='Enter') tryLogin()"></div>
+    <button class="login-btn" onclick="tryLogin()">로그인</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-foot">© 에버온 전략기획팀 · 내부 전용</div>
+  </div>
+</div>
+
+<div class="app hidden" id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="everon-logo topbar-logo"><span class="ever">ever</span><span class="on-pill">on</span></div>
+      <div class="topbar-title">전기요금 검증 시스템</div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbarUser">everon</span>
+      <button class="icon-btn" onclick="openModal('history')" title="이력">📚</button>
+      <button class="icon-btn" onclick="openModal('settings')" title="설정">⚙️</button>
+      <button class="icon-btn danger" onclick="logout()" title="로그아웃">⎋</button>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="nav-group">
+        <div class="nav-group-title">메인</div>
+        <div class="nav-item active" data-view="dashboard" onclick="navigate('dashboard')"><span class="nav-icon">🏠</span><span>대시보드</span></div>
+        <div class="nav-item" data-view="upload" onclick="navigate('upload')"><span class="nav-icon">📥</span><span>파일 업로드</span></div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">검증 결과</div>
+        <div class="nav-item" data-view="cat-money" onclick="navigate('cat-money')"><span class="nav-icon">💰</span><span>금액 검증</span><span class="nav-badge zero" id="badge-money">0</span></div>
+        <div class="nav-item" data-view="cat-usage" onclick="navigate('cat-usage')"><span class="nav-icon">⚡</span><span>사용량 검증</span><span class="nav-badge zero" id="badge-usage">0</span></div>
+        <div class="nav-item" data-view="cat-anomaly" onclick="navigate('cat-anomaly')"><span class="nav-icon">🚨</span><span>데이터 이상</span><span class="nav-badge zero" id="badge-anomaly">0</span></div>
+        <div class="nav-item" data-view="cat-monthly" onclick="navigate('cat-monthly')"><span class="nav-icon">📈</span><span>월간 변동</span><span class="nav-badge zero" id="badge-monthly">0</span></div>
+        <div class="nav-item" data-view="cat-contract" onclick="navigate('cat-contract')"><span class="nav-icon">🔌</span><span>계약 적정성</span><span class="nav-badge zero" id="badge-contract">0</span></div>
+        <div class="nav-item" data-view="cat-missing" onclick="navigate('cat-missing')"><span class="nav-icon">🔁</span><span>중복 · 누락</span><span class="nav-badge zero" id="badge-missing">0</span></div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">인사이트</div>
+        <div class="nav-item" data-view="utilization" onclick="navigate('utilization')"><span class="nav-icon">📊</span><span>충전기 가동률</span></div>
+        <div class="nav-item" data-view="refunds" onclick="navigate('refunds')"><span class="nav-icon">💸</span><span>환급 추적</span></div>
+      </div>
+    </aside>
+
+    <div class="main-content" id="mainContent">
+
+      <div class="view" id="view-dashboard">
+        <div class="page-title">대시보드</div>
+        <div class="page-sub" id="dashSub">데이터를 업로드하면 검증 요약이 여기 표시됩니다.</div>
+
+        <div class="dash-hero">
+          <div class="dash-hero-label">이번 달 청구 총액 (최근 업로드 기준)</div>
+          <div class="dash-hero-value" id="heroAmount">—</div>
+          <div class="dash-hero-sub" id="heroSub">아직 데이터 없음</div>
+        </div>
+
+        <div class="dash-grid">
+          <div class="stat-card"><div class="stat-label">치명적 이슈</div><div class="stat-value danger" id="ds-crit">0</div><div class="stat-sub">금액 · 계산 오류</div></div>
+          <div class="stat-card"><div class="stat-label">주의 이슈</div><div class="stat-value warn" id="ds-warn">0</div><div class="stat-sub">불일치 · 변동</div></div>
+          <div class="stat-card"><div class="stat-label">예상 환급액</div><div class="stat-value blue" id="ds-refund">₩0</div><div class="stat-sub">치명적 이슈 합산</div></div>
+          <div class="stat-card"><div class="stat-label">누적 데이터</div><div class="stat-value" id="ds-months">0</div><div class="stat-sub" id="ds-months-sub">월간 비교용</div></div>
+        </div>
+
+        <div class="dash-row">
+          <div class="card">
+            <div class="card-head"><div class="card-title">월별 청구액 트렌드</div><span class="tag gray" id="trendRange">—</span></div>
+            <div class="card-body"><div class="chart-box"><canvas id="chartTrend"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div class="card-title">충전기 가동률 분포</div><span class="tag gray">기준 430kWh/월</span></div>
+            <div class="card-body"><div class="chart-box"><canvas id="chartUtil"></canvas></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title">최근 주요 이슈 Top 5</div><button class="btn btn-outline btn-sm" onclick="navigate('cat-money')">모두 보기 →</button></div>
+          <div id="topIssuesBody">
+            <div class="empty" style="padding: 40px 20px;"><div class="empty-icon">📋</div><div class="empty-title">아직 검증 결과가 없습니다</div><div class="empty-sub">파일 업로드 → 검증 시작 후 표시됩니다</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-upload" style="display:none;">
+        <div class="page-title">파일 업로드</div>
+        <div class="page-sub">빌코리아 청구서와 관제 검침 파일을 업로드하면 자동 검증이 실행됩니다.</div>
+        <div class="card card-pad" style="margin-bottom: 16px;">
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 12px;">단일 업로드 (이번 달)</div>
+          <div class="upload-grid">
+            <label class="dropzone" id="dropBill">
+              <span class="dropzone-clear" onclick="event.preventDefault(); clearFile('bill')">×</span>
+              <input type="file" accept=".xlsx,.xls,.csv" onchange="handleFile(event, 'bill')">
+              <div class="dropzone-tag">한전 청구서</div>
+              <svg class="dropzone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"/></svg>
+              <div class="dropzone-title">빌코리아 파일</div>
+              <div class="dropzone-desc">xlsx 또는 csv · 드래그 또는 클릭</div>
+              <div class="dropzone-file" id="billFile"></div>
+            </label>
+            <label class="dropzone" id="dropMeter">
+              <span class="dropzone-clear" onclick="event.preventDefault(); clearFile('meter')">×</span>
+              <input type="file" accept=".xlsx,.xls,.csv" onchange="handleFile(event, 'meter')">
+              <div class="dropzone-tag">에버온 관제</div>
+              <svg class="dropzone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+              <div class="dropzone-title">관제 검침 파일</div>
+              <div class="dropzone-desc">xlsx 또는 csv · 드래그 또는 클릭</div>
+              <div class="dropzone-file" id="meterFile"></div>
+            </label>
+          </div>
+          <div class="action-bar">
+            <button class="btn btn-secondary" onclick="openModal('batch')">📦 1년치 배치 업로드</button>
+            <button class="btn btn-primary" id="runBtn" onclick="runValidation()" disabled>검증 시작 →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-cat" style="display:none;">
+        <div class="page-title" id="catTitle">검증 결과</div>
+        <div class="page-sub" id="catSub"></div>
+        <div class="card">
+          <div class="card-head">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="card-title" id="catHeadTitle">항목</span>
+              <span class="tag blue" id="catHeadCount">0건</span>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="exportExcel()">📥 엑셀 다운로드</button>
+          </div>
+          <div id="catBody" style="max-height: 70vh; overflow-y: auto;"></div>
+        </div>
+      </div>
+
+      <div class="view" id="view-utilization" style="display:none;">
+        <div class="page-title">충전기 가동률</div>
+        <div class="page-sub">월평균 430kWh/충전기 기준으로 이용 효율 분석</div>
+        <div class="card card-pad">
+          <div id="utilContent"><div class="empty"><div class="empty-icon">📊</div><div class="empty-title">데이터 없음</div></div></div>
+        </div>
+      </div>
+
+      <div class="view" id="view-refunds" style="display:none;">
+        <div class="page-title">환급 추적</div>
+        <div class="page-sub">한전 이의제기 → 환급 결과 기록 (수동 입력)</div>
+        <div class="card card-pad">
+          <div class="empty">
+            <div class="empty-icon">💸</div>
+            <div class="empty-title">Phase 5 구현 예정</div>
+            <div class="empty-sub">현재는 치명적 이슈 파악 단계. 실제 이의제기 시작 후 추적 기능 활성화.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalSettings">
+  <div class="modal">
+    <div class="modal-head"><h2>⚙️ 설정</h2><button class="modal-close" onclick="closeModal('settings')">×</button></div>
+    <div class="modal-body">
+      <div class="setting-group">
+        <div class="setting-title">한전 단가</div>
+        <div class="setting-desc">고시 단가 변경 시 수정.</div>
+        <div class="setting-row"><label>기후환경요금</label><input type="number" step="0.1" id="set_climate"><span class="unit">원/kWh</span></div>
+        <div class="setting-row"><label>연료비조정요금</label><input type="number" step="0.1" id="set_fuel"><span class="unit">원/kWh</span></div>
+        <div class="setting-row"><label>부가가치세율</label><input type="number" step="0.01" id="set_vat"><span class="unit">%</span></div>
+        <div class="setting-row"><label>전력산업기반기금율</label><input type="number" step="0.01" id="set_fund"><span class="unit">%</span></div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-title">오차 허용</div>
+        <div class="setting-desc">이 범위 이내는 정상으로 간주.</div>
+        <div class="setting-row"><label>금액 오차</label><input type="number" id="set_amtTol"><span class="unit">원</span></div>
+        <div class="setting-row"><label>AC 손실 허용률</label><input type="number" step="0.1" id="set_acLoss"><span class="unit">%</span></div>
+        <div class="setting-row"><label>초과전력 허용</label><input type="number" step="0.1" id="set_excess"><span class="unit">kW</span></div>
+        <div class="setting-row"><label>정격용량-계약전력 허용 차이</label><input type="number" step="0.1" id="set_capTol"><span class="unit">kW</span></div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-title">시간대 매핑</div>
+        <div class="setting-row"><label>경부하지침 ↔</label><select id="set_mapNight"><option value="심야">심야 (22~08시)</option><option value="주간">주간 (08~15,21~22시)</option><option value="저녁">저녁 (15~21시)</option></select></div>
+        <div class="setting-row"><label>중부하지침 ↔</label><select id="set_mapMid"><option value="심야">심야</option><option value="주간">주간</option><option value="저녁">저녁</option></select></div>
+        <div class="setting-row"><label>최대부하지침 ↔</label><select id="set_mapPeak"><option value="심야">심야</option><option value="주간">주간</option><option value="저녁">저녁</option></select></div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-title">기타</div>
+        <div class="setting-row"><label>충전기 월평균 사용량 기준</label><input type="number" id="set_avgKwh"><span class="unit">kWh</span></div>
+        <div class="setting-row"><label>해지 판별 기준</label><input type="number" id="set_inactiveMonths"><span class="unit">개월</span></div>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary btn-sm" onclick="resetSettings()">기본값</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalHistory">
+  <div class="modal">
+    <div class="modal-head"><h2>📚 누적 데이터 이력</h2><button class="modal-close" onclick="closeModal('history')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">월별로 누적된 빌코리아 데이터. 월간 비교 · 누락 감지에 사용됨.</p>
+      <div id="historyList"></div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+        <button class="btn btn-secondary btn-sm" onclick="exportBackup()">💾 백업 다운로드</button>
+        <label class="btn btn-secondary btn-sm" style="cursor: pointer;">📤 복원<input type="file" accept=".json" style="display:none;" onchange="importBackup(event)"></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBatch">
+  <div class="modal wide">
+    <div class="modal-head"><h2>📦 1년치 배치 업로드</h2><button class="modal-close" onclick="closeModal('batch')">×</button></div>
+    <div class="modal-body">
+      <p style="font-size: 13px; color: var(--text-soft); margin-bottom: 20px; line-height: 1.6;">1년치 통합 파일(CSV 또는 XLSX)을 한 번에 업로드하면 청구년월별로 자동 분리 저장됩니다.<br>월간 비교 · 해지/누락 판별 · 전년 동월 대비 분석이 즉시 활성화됩니다.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <label class="dropzone" style="padding: 30px 20px;">
+          <input type="file" accept=".xlsx,.xls,.csv" onchange="handleBatch(event, 'bill')">
+          <div class="dropzone-tag">빌코리아 통합</div>
+          <svg class="dropzone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" style="width:40px;height:40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>
+          <div class="dropzone-title">빌코리아 1년치</div>
+          <div class="dropzone-desc">청구년월 컬럼 있는 통합 파일</div>
+        </label>
+        <label class="dropzone" style="padding: 30px 20px;">
+          <input type="file" accept=".xlsx,.xls,.csv" onchange="handleBatch(event, 'meter')">
+          <div class="dropzone-tag">관제 통합</div>
+          <svg class="dropzone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" style="width:40px;height:40px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>
+          <div class="dropzone-title">관제 1년치</div>
+          <div class="dropzone-desc">요금년월 컬럼 있는 통합 파일</div>
+        </label>
+      </div>
+      <div id="batchResult" style="margin-top: 16px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="processing" id="processing">
+  <div class="spinner"></div>
+  <div class="processing-text" id="processingText">처리 중...</div>
+  <div class="processing-sub" id="processingSub"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  Phase 1 Shell - 로그인 + 네비게이션 + 설정 기본 동작
+//  (Phase 2~5에서 검증 로직, 파일 처리, 엑셀 내보내기 추가)
+// ═══════════════════════════════════════════════════════════════
+
+const LOGIN_USER = 'everon';
+const LOGIN_PASS = 'somin';
+
+const DEFAULT_SETTINGS = {
+  climateCharge: 9.0, fuelAdjust: 5.0, vatRate: 10.0, fundRate: 2.7,
+  amountTol: 10, acLossRate: 25.0, excessTol: 1.0, capTol: 3.0,
+  mapNight: '심야', mapMid: '주간', mapPeak: '저녁',
+  avgKwhPerCharger: 430, inactiveMonths: 2,
+};
+let settings = { ...DEFAULT_SETTINGS };
+
+// IndexedDB
+const db = new Dexie('EveronBillChecker');
+db.version(1).stores({
+  months: '&yyyymm, uploadedAt',
+  bills: '[yyyymm+custNo], yyyymm, custNo',
+  meters: '[yyyymm+custNo], yyyymm, custNo',
+  runs: '++id, runAt',
+  config: '&key'
+});
+
+// 상태
+let billData = null, meterData = null, meterRawRows = null;
+let billFileName = '', meterFileName = '';
+let billRawWorkbook = null;
+let validationResults = [];
+let currentView = 'dashboard';
+
+// 유틸
+const $ = (s) => document.querySelector(s);
+const fmt = (n) => (n == null || isNaN(n)) ? '—' : Math.round(n).toLocaleString('ko-KR');
+const fmtMoney = (n) => n == null ? '—' : '₩' + fmt(n);
+const toast = (msg, type) => {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  setTimeout(() => t.classList.remove('show'), 2500);
+};
+const showProc = (text, sub) => {
+  $('#processingText').textContent = text || '처리 중...';
+  $('#processingSub').textContent = sub || '';
+  $('#processing').classList.add('active');
+};
+const hideProc = () => $('#processing').classList.remove('active');
+
+// ═══════════════════════════════════════════════════════════════
+//  로그인
+// ═══════════════════════════════════════════════════════════════
+function tryLogin() {
+  const id = $('#loginId').value.trim();
+  const pw = $('#loginPw').value;
+  if (id === LOGIN_USER && pw === LOGIN_PASS) {
+    sessionStorage.setItem('everon_auth', '1');
+    enterApp();
+  } else {
+    $('#loginErr').textContent = '아이디 또는 비밀번호가 일치하지 않습니다.';
+    $('#loginPw').value = '';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('everon_auth');
+  location.reload();
+}
+
+function enterApp() {
+  $('#loginScreen').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+  $('#loginErr').textContent = '';
+  init();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  네비게이션
+// ═══════════════════════════════════════════════════════════════
+function navigate(view) {
+  currentView = view;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll(`.nav-item[data-view="${view}"]`).forEach(n => n.classList.add('active'));
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  if (view.startsWith('cat-')) {
+    $('#view-cat').style.display = '';
+    renderCategory(view);
+  } else {
+    const el = $('#view-' + view);
+    if (el) el.style.display = '';
+    if (view === 'dashboard') renderDashboard();
+    if (view === 'utilization') renderUtilization();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  대시보드
+// ═══════════════════════════════════════════════════════════════
+let chartTrend = null, chartUtil = null;
+
+async function renderDashboard() {
+  const months = await db.months.orderBy('yyyymm').toArray();
+  $('#ds-months').textContent = months.length + '개월';
+  $('#ds-months-sub').textContent = months.length === 0 ? '월간 비교 비활성' : (months.length >= 2 ? '월간 비교 활성' : '2개월 이상 필요');
+
+  if (months.length > 0) {
+    const latest = months[months.length - 1];
+    $('#heroAmount').textContent = fmtMoney(latest.totalAmount);
+    $('#heroSub').textContent = `${latest.yyyymm.substring(0,4)}년 ${latest.yyyymm.substring(4,6)}월 · ${fmt(latest.billCount)}건`;
+    $('#dashSub').textContent = `최근 검증: ${latest.yyyymm} · 데이터 누적 ${months.length}개월`;
+  }
+
+  // 월별 트렌드 차트
+  if (months.length > 0) {
+    const labels = months.map(m => `${m.yyyymm.substring(4,6)}월`);
+    const data = months.map(m => m.totalAmount);
+    $('#trendRange').textContent = `${months[0].yyyymm} ~ ${months[months.length-1].yyyymm}`;
+    if (chartTrend) chartTrend.destroy();
+    chartTrend = new Chart($('#chartTrend'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: '청구액', data, backgroundColor: 'rgba(22,172,227,0.8)', borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '₩' + (v/10000).toFixed(0) + '만' } } } }
+    });
+  }
+
+  // 가동률 차트 (관제 데이터 기반)
+  const meterMonths = await db.meters.orderBy('yyyymm').uniqueKeys();
+  if (meterMonths.length > 0) {
+    const latestMeterYm = meterMonths[meterMonths.length - 1];
+    const meters = await db.meters.where('yyyymm').equals(latestMeterYm).toArray();
+    const buckets = { '미가동(0kWh)': 0, '저조(~100)': 0, '중간(100~430)': 0, '정상(430~800)': 0, '과밀(800+)': 0 };
+    for (const m of meters) {
+      const total = (m.경부하합 || 0) + (m.중부하합 || 0) + (m.최대부하합 || 0);
+      const perCharger = m.충전기수 > 0 ? total / m.충전기수 : 0;
+      if (perCharger === 0) buckets['미가동(0kWh)']++;
+      else if (perCharger < 100) buckets['저조(~100)']++;
+      else if (perCharger < 430) buckets['중간(100~430)']++;
+      else if (perCharger < 800) buckets['정상(430~800)']++;
+      else buckets['과밀(800+)']++;
+    }
+    if (chartUtil) chartUtil.destroy();
+    chartUtil = new Chart($('#chartUtil'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(buckets),
+        datasets: [{
+          data: Object.values(buckets),
+          backgroundColor: ['#cbd5e1', '#fbbf24', '#60a5fa', '#34d399', '#f472b6'],
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } } }
+    });
+  }
+
+  // 최근 실행 정보
+  const lastRun = await db.runs.orderBy('runAt').reverse().first();
+  if (lastRun) {
+    $('#ds-crit').textContent = lastRun.crit || 0;
+    $('#ds-warn').textContent = lastRun.warn || 0;
+    $('#ds-refund').textContent = fmtMoney(lastRun.totalDiff || 0);
+  }
+
+  // 월별 데이터 테이블 렌더링
+  renderMonthsTable(months);
+}
+
+function renderMonthsTable(months) {
+  let existingEl = document.getElementById('monthsTableCard');
+  if (months.length === 0) {
+    if (existingEl) existingEl.remove();
+    return;
+  }
+  const html = `
+    <div class="card" id="monthsTableCard" style="margin-top: 20px;">
+      <div class="card-head">
+        <div class="card-title">📅 누적 월별 데이터</div>
+        <span class="tag blue">${months.length}개월</span>
+      </div>
+      <table class="issue-table">
+        <thead><tr>
+          <th style="width:120px;">청구월</th>
+          <th style="width:100px;">청구건수</th>
+          <th>총 청구액</th>
+          <th style="width:120px;">관제 매칭</th>
+          <th style="width:180px;">작업</th>
+        </tr></thead>
+        <tbody id="monthsTableBody"></tbody>
+      </table>
+    </div>`;
+  if (existingEl) {
+    existingEl.outerHTML = html;
+  } else {
+    document.querySelector('#view-dashboard').insertAdjacentHTML('beforeend', html);
+  }
+  // 관제 매칭 정보를 비동기로 채움
+  fillMonthsMeterInfo(months);
+}
+
+async function fillMonthsMeterInfo(months) {
+  const body = $('#monthsTableBody');
+  if (!body) return;
+  const rows = [];
+  for (const m of [...months].reverse()) {
+    const meterYm = billYmToMeterYm(m.yyyymm);
+    let meterCount = 0;
+    try {
+      meterCount = await db.meters.where('yyyymm').equals(meterYm).count();
+    } catch (e) {}
+    const matchStatus = meterCount > 0
+      ? `<span class="tag ok">${meterYm} ✓</span>`
+      : `<span class="tag gray">없음</span>`;
+    rows.push(`
+      <tr>
+        <td style="font-weight:700;">${m.yyyymm.substring(0,4)}.${m.yyyymm.substring(4,6)}</td>
+        <td>${fmt(m.billCount)}건</td>
+        <td>${fmtMoney(m.totalAmount)}</td>
+        <td>${matchStatus}</td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="runMonthValidation('${m.yyyymm}')">검증 →</button>
+          <button class="btn btn-secondary btn-sm" onclick="deleteMonth('${m.yyyymm}')">삭제</button>
+        </td>
+      </tr>`);
+  }
+  body.innerHTML = rows.join('');
+}
+
+async function renderUtilization() {
+  const meterMonths = await db.meters.orderBy('yyyymm').uniqueKeys();
+  if (meterMonths.length === 0) {
+    $('#utilContent').innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">관제 데이터가 없습니다</div><div class="empty-sub">배치 업로드에서 관제 파일을 올리면 분석 활성화</div></div>`;
+    return;
+  }
+  const latest = meterMonths[meterMonths.length - 1];
+  const meters = await db.meters.where('yyyymm').equals(latest).toArray();
+
+  // 버킷 분류
+  const buckets = {
+    '미가동 (0kWh)': [],
+    '저조 (~100kWh)': [],
+    '중간 (100~430)': [],
+    '정상 (430~800)': [],
+    '과밀 (800+)': [],
+  };
+  for (const m of meters) {
+    const total = (m.경부하합 || 0) + (m.중부하합 || 0) + (m.최대부하합 || 0);
+    const perCharger = m.충전기수 > 0 ? total / m.충전기수 : 0;
+    const entry = { ...m, 총사용량: total, 충전기당: Math.round(perCharger) };
+    if (perCharger === 0) buckets['미가동 (0kWh)'].push(entry);
+    else if (perCharger < 100) buckets['저조 (~100kWh)'].push(entry);
+    else if (perCharger < 430) buckets['중간 (100~430)'].push(entry);
+    else if (perCharger < 800) buckets['정상 (430~800)'].push(entry);
+    else buckets['과밀 (800+)'].push(entry);
+  }
+
+  const tot = meters.length;
+  const summary = Object.entries(buckets).map(([k, v]) => `
+    <div class="sum-card ${k.startsWith('미가동') || k.startsWith('저조') ? 'warning' : k.startsWith('과밀') ? 'critical' : k.startsWith('정상') ? 'good' : 'info'}">
+      <div class="sum-label">${k}</div>
+      <div class="sum-value">${v.length.toLocaleString()}</div>
+      <div class="sum-sub">${(v.length / tot * 100).toFixed(1)}%</div>
+    </div>
+  `).join('');
+
+  // 미가동/저조 Top 20 리스트
+  const lowUsage = [...buckets['미가동 (0kWh)'], ...buckets['저조 (~100kWh)']]
+    .sort((a, b) => a.충전기당 - b.충전기당)
+    .slice(0, 20);
+
+  const table = lowUsage.length === 0 ? '' : `
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-head"><div class="card-title">⚠️ 저조/미가동 충전소 TOP 20</div><span class="tag warn">월평균 430kWh 기준 미달</span></div>
+      <table class="issue-table">
+        <thead><tr>
+          <th style="width:120px;">고객번호</th>
+          <th>충전소명</th>
+          <th style="width:80px;">충전기수</th>
+          <th style="width:120px;">당월 총 사용량</th>
+          <th style="width:120px;">충전기당 평균</th>
+        </tr></thead>
+        <tbody>${lowUsage.map(m => `
+          <tr>
+            <td class="issue-cust">${m.custNo}</td>
+            <td class="issue-addr">${escapeHtml(m.충전소명 || '-')}</td>
+            <td>${m.충전기수}대</td>
+            <td class="issue-diff">${fmt(m.총사용량)} kWh</td>
+            <td class="issue-diff ${m.충전기당 === 0 ? 'diff-minus' : ''}">${fmt(m.충전기당)} kWh</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  $('#utilContent').innerHTML = `
+    <div style="font-size:13px;color:var(--text-soft);margin-bottom:16px;">기준월: <strong>${latest.substring(0,4)}년 ${latest.substring(4,6)}월</strong> · 총 ${fmt(tot)}개 고객번호</div>
+    <div class="summary-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 0;">${summary}</div>
+    ${table}`;
+}
+
+function renderCategory(view) {
+  const titles = {
+    'cat-money': { t: '💰 금액 검증', s: '기본요금·공급가액·부가세·전력기금·합산 등 한전 내부 계산 오류', h: '금액 관련 이슈' },
+    'cat-usage': { t: '⚡ 사용량 검증', s: '관제 vs 한전 시간대별 사용량 교차비교', h: '사용량 불일치' },
+    'cat-anomaly': { t: '🚨 데이터 이상', s: '한전 측 0값 또는 누락 의심 건', h: '한전 데이터 이상' },
+    'cat-monthly': { t: '📈 월간 변동', s: '전월 대비 사용량·금액·수요전력 급변', h: '월간 변동 감지' },
+    'cat-contract': { t: '🔌 계약 적정성', s: '충전기 정격용량 합 vs 계약전력 · 과다/과소 계약 리스크', h: '계약 전력 관련' },
+    'cat-missing': { t: '🔁 중복 · 누락', s: '중복청구 · 기간 겹침 · 한전 누락(해지 아님) 자동 판별', h: '중복 및 누락' },
+  };
+  const info = titles[view] || { t: '검증 결과', s: '', h: '항목' };
+  $('#catTitle').textContent = info.t;
+  $('#catSub').textContent = info.s;
+  $('#catHeadTitle').textContent = info.h;
+  $('#catBody').innerHTML = `<div class="empty"><div class="empty-icon">⏳</div><div class="empty-title">Phase 2에서 검증 로직 활성화 예정</div><div class="empty-sub">파일 업로드 → 검증 실행 후 여기에 결과 표시</div></div>`;
+  $('#catHeadCount').textContent = '0건';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Phase 2a — 유틸 & 컬럼 별칭
+// ═══════════════════════════════════════════════════════════════
+const normalizeCustNo = (v) => {
+  if (v == null) return '';
+  return String(v).replace(/[^\d]/g, '').padStart(10, '0');
+};
+const num = (v) => {
+  if (v == null || v === '') return 0;
+  const n = parseFloat(String(v).replace(/,/g, ''));
+  return isNaN(n) ? 0 : n;
+};
+const calcBillDays = (start, end) => {
+  const s = String(start).replace(/[^\d]/g, '');
+  const e = String(end).replace(/[^\d]/g, '');
+  if (s.length < 8 || e.length < 8) return 0;
+  const d1 = new Date(`${s.substring(0,4)}-${s.substring(4,6)}-${s.substring(6,8)}`);
+  const d2 = new Date(`${e.substring(0,4)}-${e.substring(4,6)}-${e.substring(6,8)}`);
+  if (isNaN(d1) || isNaN(d2)) return 0;
+  return Math.round((d2 - d1) / 86400000) + 1;
+};
+const extractYyyymm = (v) => {
+  const s = String(v).replace(/[^\d]/g, '');
+  return s.length >= 6 ? s.substring(0, 6) : '';
+};
+const prevYyyymm = (ym) => {
+  if (!ym || ym.length !== 6) return '';
+  const y = +ym.substring(0,4), m = +ym.substring(4,6);
+  const d = new Date(y, m - 2, 1);
+  return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0');
+};
+const billYmToMeterYm = (ym) => prevYyyymm(ym); // 청구 4월 = 관제 3월
+
+// 빌코리아 컬럼 별칭
+const BILL_ALIASES = {
+  custNo: ['고객번호'],
+  billYyyymm: ['청구년월', '요금년월'],
+  contractType: ['계약종별'],
+  address: ['주소'],
+  contractPower: ['계약전력'],
+  appliedPower: ['요금적용전력'],
+  maxPowerLow: ['최대수요전력(저압)'],
+  maxPowerDay: ['최대수요전력(주간)'],
+  baseFee: ['기본요금'],
+  baseFeeRate: ['기본요금 단가', '기본요금단가'],
+  useStart: ['사용시작'],
+  useEnd: ['사용끝'],
+  usage: ['사용량'],
+  excessFee: ['초과요금'],
+  supplyAmount: ['공급가액'],
+  electricFee: ['전기요금계'],
+  vat: ['부가가치세'],
+  fundFee: ['전력기금'],
+  roundDown: ['원단위절사'],
+  prevOverdue: ['전월연체료'],
+  surcharge: ['가산금'],
+  nextMonthAdj: ['익월정산액'],
+  collectAdj: ['수금정산액'],
+  billAmount: ['청구요금'],
+  unpaidAmount: ['미납요금'],
+  nightRate: ['심야 단가'],
+  nightUsage: ['심야 사용량'],
+  dayRate: ['주간 단가'],
+  dayUsage: ['주간 사용량'],
+  eveRate: ['저녁 단가'],
+  eveUsage: ['저녁 사용량'],
+  prevNight: ['전월심야지침'],
+  prevLight: ['전월지침_경'],
+  prevMid: ['전월지침_중'],
+  prevPeak: ['전월지침_최'],
+  powerFee: ['전력량요금'],
+  climateFee: ['기후환경요금'],
+};
+const METER_ALIASES = {
+  custNo: ['고객번호'],
+  chargerId: ['충전기ID'],
+  capacity: ['충전기 정격용량', '정격용량', '충전기용량'],
+  stationName: ['충전소명'],
+  yyyymm: ['요금년월'],
+  contractPower: ['계약전력'],
+  lightReading: ['전력량계 경부하지침', '경부하지침'],
+  midReading: ['전력량계 중부하지침', '중부하지침'],
+  peakReading: ['전력량계 최대부하지침', '최대부하지침'],
+  maxMidReading: ['최대수요전력량계 중부하지침'],
+  maxPeakReading: ['최대수요전력량계 최대부하지침'],
+};
+function resolveCol(headers, aliases) {
+  for (const a of aliases) for (const h of headers) if (String(h).trim() === a) return h;
+  return null;
+}
+function buildColMap(headers, dict) {
+  const m = {};
+  for (const k in dict) m[k] = resolveCol(headers, dict[k]);
+  return m;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Phase 2b — 파일 파싱 (CSV/XLSX 공용)
+// ═══════════════════════════════════════════════════════════════
+async function parseFile(file) {
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.csv')) {
+    const text = await file.text();
+    return parseCSV(text);
+  } else {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+    return parseAOA(aoa, wb, wb.SheetNames[0], buf);
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/);
+  const rows = [];
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const row = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQ = !inQ;
+      } else if (c === ',' && !inQ) {
+        row.push(cur); cur = '';
+      } else {
+        cur += c;
+      }
+    }
+    row.push(cur);
+    rows.push(row);
+  }
+  return parseAOA(rows);
+}
+
+function parseAOA(aoa, workbook, sheetName, origBuffer) {
+  let hRow = -1;
+  for (let i = 0; i < Math.min(aoa.length, 20); i++) {
+    const r = aoa[i] || [];
+    const strs = r.map(c => c == null ? '' : String(c));
+    if (strs.some(c => c.includes('고객번호'))) { hRow = i; break; }
+  }
+  if (hRow < 0) throw new Error('헤더 행을 찾을 수 없습니다 (고객번호 컬럼 필요)');
+  const headers = aoa[hRow].map(h => String(h || '').trim());
+  const rows = [];
+  for (let i = hRow + 1; i < aoa.length; i++) {
+    const r = aoa[i];
+    if (!r || r.length === 0) continue;
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = r[idx]; });
+    if (obj['고객번호'] != null && String(obj['고객번호']).trim()) {
+      obj._rowIdx = i;
+      rows.push(obj);
+    }
+  }
+  return { headers, rows, headerRowIdx: hRow, workbook, sheetName, origBuffer };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Phase 2c — 빌코리아 정규화 & 관제 집계
+// ═══════════════════════════════════════════════════════════════
+function normalizeBillRow(r, m) {
+  const g = (k) => m[k] ? r[m[k]] : undefined;
+  const billYm = extractYyyymm(g('billYyyymm') || g('useStart'));
+  return {
+    _rowIdx: r._rowIdx,
+    custNo: normalizeCustNo(g('custNo')),
+    billYyyymm: billYm,
+    yyyymm: billYm,
+    계약종별: String(g('contractType') || ''),
+    주소: String(g('address') || ''),
+    계약전력: num(g('contractPower')),
+    요금적용전력: num(g('appliedPower')),
+    최대수요전력: num(g('maxPowerLow')) || num(g('maxPowerDay')),
+    기본요금: num(g('baseFee')),
+    기본요금단가: num(g('baseFeeRate')),
+    사용시작: String(g('useStart') || ''),
+    사용끝: String(g('useEnd') || ''),
+    사용량: num(g('usage')),
+    초과요금: num(g('excessFee')),
+    공급가액: num(g('supplyAmount')),
+    전기요금계: num(g('electricFee')),
+    부가가치세: num(g('vat')),
+    전력기금: num(g('fundFee')),
+    원단위절사: num(g('roundDown')),
+    전월연체료: num(g('prevOverdue')),
+    가산금: num(g('surcharge')),
+    익월정산액: num(g('nextMonthAdj')),
+    수금정산액: num(g('collectAdj')),
+    청구요금: num(g('billAmount')),
+    미납요금: num(g('unpaidAmount')),
+    심야단가: num(g('nightRate')),
+    심야사용량: num(g('nightUsage')),
+    주간단가: num(g('dayRate')),
+    주간사용량: num(g('dayUsage')),
+    저녁단가: num(g('eveRate')),
+    저녁사용량: num(g('eveUsage')),
+    전월지침경: num(g('prevLight')) || num(g('prevNight')),
+    전월지침중: num(g('prevMid')),
+    전월지침최: num(g('prevPeak')),
+    전력량요금: num(g('powerFee')),
+    기후환경요금: num(g('climateFee')),
+  };
+}
+
+function aggregateMeter(rows, m, ymFilter) {
+  const by = {};
+  for (const r of rows) {
+    const cust = normalizeCustNo(r[m.custNo]);
+    if (!cust || cust === '0000000000' || cust.replace(/0/g, '').length < 3) continue;
+    if (ymFilter) {
+      const ym = extractYyyymm(r[m.yyyymm]);
+      if (ym !== ymFilter) continue;
+    }
+    if (!by[cust]) {
+      by[cust] = {
+        custNo: cust,
+        충전소명: String(r[m.stationName] || ''),
+        계약전력: num(r[m.contractPower]),
+        요금년월: String(r[m.yyyymm] || ''),
+        경부하합: 0, 중부하합: 0, 최대부하합: 0,
+        최대수요중부하합: 0, 최대수요최대부하합: 0,
+        정격용량합: 0, 충전기수: 0,
+      };
+    }
+    const b = by[cust];
+    b.경부하합 += num(r[m.lightReading]);
+    b.중부하합 += num(r[m.midReading]);
+    b.최대부하합 += num(r[m.peakReading]);
+    b.최대수요중부하합 += num(r[m.maxMidReading]);
+    b.최대수요최대부하합 += num(r[m.maxPeakReading]);
+    b.정격용량합 += num(r[m.capacity]);
+    b.충전기수 += 1;
+  }
+  return by;
+}
+
+function extractMeterMonths(rows, m) {
+  const set = new Set();
+  for (const r of rows) {
+    const ym = extractYyyymm(r[m.yyyymm]);
+    if (ym.length === 6) set.add(ym);
+  }
+  return Array.from(set).sort();
+}
+
+function inferBillMonth(bills) {
+  const cnt = {};
+  for (const b of bills) {
+    const ym = b.billYyyymm;
+    if (ym) cnt[ym] = (cnt[ym] || 0) + 1;
+  }
+  let max = 0, r = '';
+  for (const ym in cnt) if (cnt[ym] > max) { max = cnt[ym]; r = ym; }
+  return r;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Phase 2d — 검증 엔진 (29개 규칙)
+// ═══════════════════════════════════════════════════════════════
+function validate(bills, meterByCust, prevBills) {
+  const out = [];
+  const prevByCust = {};
+  if (prevBills) for (const p of prevBills) prevByCust[p.custNo] = p;
+
+  // 중복 청구 감지
+  const billsByCust = {};
+  for (const b of bills) {
+    if (!billsByCust[b.custNo]) billsByCust[b.custNo] = [];
+    billsByCust[b.custNo].push(b);
+  }
+
+  for (const b of bills) {
+    const issues = [];
+    const calcs = {};
+
+    // ═════ A. 금액 검증 ═════
+    // A1: 시간대별 합 = 사용량
+    const timeSum = b.심야사용량 + b.주간사용량 + b.저녁사용량;
+    calcs.시간대합계산 = timeSum;
+    if (timeSum > 0 && Math.abs(timeSum - b.사용량) > 1) {
+      issues.push({ code: 'A1', level: 'critical', cat: 'money', col: '사용량',
+        msg: `시간대합 ${fmt(timeSum)} ≠ 사용량 ${fmt(b.사용량)}`, diff: timeSum - b.사용량 });
+    }
+
+    // A2: 기본요금 = 단가 × 전력 (일할계산 예외)
+    if (b.기본요금단가 > 0) {
+      const days = calcBillDays(b.사용시작, b.사용끝);
+      const isProrated = days > 0 && days < 28;
+      const isLow = /저압/.test(b.계약종별);
+      const ePow = isLow ? b.계약전력 : b.요금적용전력;
+      const full = b.기본요금단가 * ePow;
+      calcs.기본요금계산 = isProrated ? Math.round(full * days / 30) : full;
+
+      if (!isProrated) {
+        const diff = b.기본요금 - full;
+        if (Math.abs(diff) > settings.amountTol) {
+          issues.push({ code: 'A2', level: 'critical', cat: 'money', col: '기본요금',
+            msg: `예상 ${fmt(full)}원 (${fmt(b.기본요금단가)}×${ePow}) ≠ 청구 ${fmt(b.기본요금)}원`, diff });
+        }
+      } else if (days > 0) {
+        const pr = Math.round(full * days / 30);
+        const diff = b.기본요금 - pr;
+        if (Math.abs(diff) > Math.max(100, full * 0.1)) {
+          issues.push({ code: 'A2p', level: 'warning', cat: 'money', col: '기본요금',
+            msg: `일할(${days}일) 예상 ${fmt(pr)}원 ≠ 청구 ${fmt(b.기본요금)}원`, diff });
+        }
+      }
+    }
+
+    // A3: 기본요금 상한
+    if (b.기본요금단가 > 0 && b.계약전력 > 0 && b.요금적용전력 <= b.계약전력) {
+      const cap = b.계약전력 * b.기본요금단가;
+      if (b.기본요금 > cap + settings.amountTol) {
+        issues.push({ code: 'A3', level: 'critical', cat: 'money', col: '기본요금',
+          msg: `계약전력 상한(${fmt(cap)}원) 초과`, diff: b.기본요금 - cap });
+      }
+    }
+
+    // A4: 초과요금
+    const over = b.요금적용전력 - b.계약전력;
+    if (over > settings.excessTol) {
+      if (b.초과요금 > 0) {
+        issues.push({ code: 'A4a', level: 'warning', cat: 'contract', col: '요금적용전력',
+          msg: `계약${b.계약전력}→적용${b.요금적용전력}kW(+${over}), 초과요금 ${fmt(b.초과요금)}원 청구 중`,
+          diff: b.초과요금 });
+      } else {
+        issues.push({ code: 'A4b', level: 'info', cat: 'contract', col: '요금적용전력',
+          msg: `계약${b.계약전력}→적용${b.요금적용전력}kW(+${over}), 1차 예고 단계` });
+      }
+    } else if (over < 0 && b.초과요금 > 0) {
+      issues.push({ code: 'A4c', level: 'critical', cat: 'money', col: '초과요금',
+        msg: `초과 아닌데 초과요금 ${fmt(b.초과요금)}원 청구`, diff: b.초과요금 });
+    }
+
+    // A5: 공급가액 (기후환경/전력량요금 실값 사용 — 타이트하게)
+    if (b.전력량요금 > 0 || b.기후환경요금 > 0) {
+      const fuel = settings.fuelAdjust * b.사용량;
+      const exp = b.기본요금 + b.초과요금 + b.전력량요금 + b.기후환경요금 + fuel;
+      calcs.공급가액계산 = Math.round(exp);
+      const diff = b.공급가액 - exp;
+      const tol = Math.max(settings.amountTol, b.사용량 * 0.3);
+      if (Math.abs(diff) > tol) {
+        issues.push({ code: 'A5', level: 'critical', cat: 'money', col: '공급가액',
+          msg: `예상 ${fmt(exp)}원 ≠ 청구 ${fmt(b.공급가액)}원 (기본${fmt(b.기본요금)}+초과${fmt(b.초과요금)}+전력량${fmt(b.전력량요금)}+기후환경${fmt(b.기후환경요금)}+연료비${fmt(fuel)})`,
+          diff });
+      }
+    } else if (b.심야단가 > 0 || b.주간단가 > 0 || b.저녁단가 > 0) {
+      const eFee = b.심야단가 * b.심야사용량 + b.주간단가 * b.주간사용량 + b.저녁단가 * b.저녁사용량;
+      const cFee = settings.climateCharge * b.사용량;
+      const fFee = settings.fuelAdjust * b.사용량;
+      const exp = b.기본요금 + b.초과요금 + eFee + cFee + fFee;
+      calcs.공급가액계산 = Math.round(exp);
+      const diff = b.공급가액 - exp;
+      if (Math.abs(diff) > Math.max(settings.amountTol, b.사용량 * 2)) {
+        issues.push({ code: 'A5', level: 'critical', cat: 'money', col: '공급가액',
+          msg: `예상 ${fmt(exp)}원 ≠ 청구 ${fmt(b.공급가액)}원 (추정값)`, diff });
+      }
+    }
+
+    // A6: 부가세 10%
+    if (b.전기요금계 > 0) {
+      const exp = Math.round(b.전기요금계 * settings.vatRate / 100);
+      calcs.부가세계산 = exp;
+      if (Math.abs(b.부가가치세 - exp) > settings.amountTol) {
+        issues.push({ code: 'A6', level: 'warning', cat: 'money', col: '부가가치세',
+          msg: `예상 ${fmt(exp)}원 (${settings.vatRate}%) ≠ 청구 ${fmt(b.부가가치세)}원`,
+          diff: b.부가가치세 - exp });
+      }
+    }
+
+    // A7: 전력기금 2.7% (10원 절사)
+    if (b.전기요금계 > 0) {
+      const exp = Math.floor(b.전기요금계 * settings.fundRate / 100 / 10) * 10;
+      calcs.전력기금계산 = exp;
+      if (Math.abs(b.전력기금 - exp) > 10) {
+        issues.push({ code: 'A7', level: 'warning', cat: 'money', col: '전력기금',
+          msg: `예상 ${fmt(exp)}원 (${settings.fundRate}%) ≠ 청구 ${fmt(b.전력기금)}원`,
+          diff: b.전력기금 - exp });
+      }
+    }
+
+    // A8: 청구요금 합산
+    const expC = b.전기요금계 + b.부가가치세 + b.전력기금 + b.원단위절사 +
+      b.전월연체료 + b.가산금 + b.익월정산액 + b.수금정산액;
+    calcs.청구요금계산 = Math.round(expC);
+    if (b.청구요금 > 0 && Math.abs(b.청구요금 - expC) > settings.amountTol) {
+      issues.push({ code: 'A8', level: 'warning', cat: 'money', col: '청구요금',
+        msg: `합산 ${fmt(expC)} ≠ 청구 ${fmt(b.청구요금)}`, diff: b.청구요금 - expC });
+    }
+
+    // A9: 시간대별 0값 (한전 누락 의심)
+    if (b.사용량 > 0 && (b.심야단가 > 0 || b.주간단가 > 0 || b.저녁단가 > 0) &&
+        b.심야사용량 === 0 && b.주간사용량 === 0 && b.저녁사용량 === 0) {
+      issues.push({ code: 'A9', level: 'warning', cat: 'anomaly', col: '시간대별',
+        msg: `사용량 ${fmt(b.사용량)}kWh 있으나 시간대 전부 0 — 한전 누락 의심` });
+      calcs.데이터상태 = '0값 의심';
+    }
+
+    // A10: 미납요금
+    if (b.미납요금 > 0) {
+      issues.push({ code: 'A10', level: 'warning', cat: 'anomaly', col: '미납요금',
+        msg: `미납 ${fmt(b.미납요금)}원 발생`, diff: b.미납요금 });
+    }
+
+    // A11: 검침기간 비정상
+    const days = calcBillDays(b.사용시작, b.사용끝);
+    if (days > 0 && (days < 26 || days > 35)) {
+      issues.push({ code: 'A11', level: 'warning', cat: 'anomaly', col: '검침기간',
+        msg: `${days}일 (정상 28~32일 벗어남)` });
+    }
+
+    // A12: 전월지침 0 + 사용량 있음
+    if ((b.전월지침경 + b.전월지침중 + b.전월지침최) === 0 && b.사용량 > 100) {
+      issues.push({ code: 'A12', level: 'warning', cat: 'anomaly', col: '전월지침',
+        msg: `전월지침 전부 0 + 사용량 ${fmt(b.사용량)}kWh — 계량기 교체/이상` });
+    }
+
+    // ═════ B. 교차검증 (관제) ═════
+    const m = meterByCust[b.custNo];
+    if (m) {
+      // B12: 계약전력 불일치
+      if (m.계약전력 > 0 && b.계약전력 > 0 && m.계약전력 !== b.계약전력) {
+        issues.push({ code: 'B12', level: 'critical', cat: 'contract', col: '계약전력',
+          msg: `관제 ${m.계약전력}kW ≠ 한전 ${b.계약전력}kW`, diff: b.계약전력 - m.계약전력 });
+      }
+
+      // B13: 시간대별 교차 (관제 > 한전 = 심각)
+      if (b.심야단가 > 0 || b.주간단가 > 0 || b.저녁단가 > 0) {
+        const map = {
+          [settings.mapNight]: m.경부하합,
+          [settings.mapMid]: m.중부하합,
+          [settings.mapPeak]: m.최대부하합,
+        };
+        const checks = [
+          { bill: b.심야사용량, meter: map['심야'] || 0, name: '심야' },
+          { bill: b.주간사용량, meter: map['주간'] || 0, name: '주간' },
+          { bill: b.저녁사용량, meter: map['저녁'] || 0, name: '저녁' },
+        ];
+        for (const c of checks) {
+          if (c.bill === 0 && c.meter === 0) continue;
+          if (c.bill === 0) continue;
+          const diff = c.meter - c.bill;
+          const pct = (diff / c.bill) * 100;
+          if (diff > c.bill * 0.02) {
+            issues.push({ code: 'B13a', level: 'critical', cat: 'usage', col: `${c.name}사용량`,
+              msg: `🚨 관제 ${fmt(c.meter)} > 한전 ${fmt(c.bill)}kWh — 한전 과소청구 의심`, diff });
+          } else if (-pct > settings.acLossRate) {
+            issues.push({ code: 'B13b', level: 'warning', cat: 'usage', col: `${c.name}사용량`,
+              msg: `관제 ${fmt(c.meter)} vs 한전 ${fmt(c.bill)} — 손실 ${Math.abs(pct).toFixed(1)}%`, diff });
+          }
+        }
+      }
+
+      // B14: 총량 교차
+      const mTotal = m.경부하합 + m.중부하합 + m.최대부하합;
+      if (mTotal > 0 && b.사용량 > 0) {
+        const diff = mTotal - b.사용량;
+        const pct = (diff / b.사용량) * 100;
+        if (diff > b.사용량 * 0.02) {
+          issues.push({ code: 'B14a', level: 'critical', cat: 'usage', col: '총사용량',
+            msg: `🚨 관제 합 ${fmt(mTotal)} > 한전 ${fmt(b.사용량)} — 과소청구 의심`, diff });
+        } else if (-pct > settings.acLossRate + 5) {
+          issues.push({ code: 'B14b', level: 'warning', cat: 'usage', col: '총사용량',
+            msg: `관제 ${fmt(mTotal)} vs 한전 ${fmt(b.사용량)} — 손실 ${Math.abs(pct).toFixed(1)}%`, diff });
+        }
+      }
+
+      // C16: 정격용량합 vs 계약전력
+      if (m.정격용량합 > 0 && b.계약전력 > 0) {
+        const diff = m.정격용량합 - b.계약전력;
+        if (diff > settings.capTol) {
+          issues.push({ code: 'C16', level: 'critical', cat: 'contract', col: '계약전력',
+            msg: `🔌 정격용량합 ${m.정격용량합}kW > 계약전력 ${b.계약전력}kW (+${diff}kW, 충전기 ${m.충전기수}대)`,
+            diff });
+        }
+      }
+
+      // C17: 최대수요전력 / 계약전력
+      if (b.최대수요전력 > 0 && b.계약전력 > 0) {
+        const util = b.최대수요전력 / b.계약전력 * 100;
+        if (util < 30) {
+          issues.push({ code: 'C17a', level: 'info', cat: 'contract', col: '계약전력',
+            msg: `최대수요/계약 = ${util.toFixed(0)}% — 계약 과다 의심` });
+        } else if (util > 95) {
+          issues.push({ code: 'C17b', level: 'warning', cat: 'contract', col: '계약전력',
+            msg: `최대수요/계약 = ${util.toFixed(0)}% — 초과 리스크` });
+        }
+      }
+    }
+
+    // ═════ D. 월간 변동 ═════
+    const p = prevByCust[b.custNo];
+    if (p) {
+      if (p.사용량 > 50 && b.사용량 > 0) {
+        const pct = ((b.사용량 - p.사용량) / p.사용량) * 100;
+        if (Math.abs(pct) > 50) {
+          issues.push({ code: 'D18', level: 'warning', cat: 'monthly', col: '사용량',
+            msg: `전월 ${fmt(p.사용량)}→당월 ${fmt(b.사용량)}kWh (${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%)`,
+            diff: b.사용량 - p.사용량 });
+        }
+      }
+      if (p.청구요금 > 10000 && b.청구요금 > 0) {
+        const pct = ((b.청구요금 - p.청구요금) / p.청구요금) * 100;
+        if (Math.abs(pct) > 50) {
+          issues.push({ code: 'D19', level: 'warning', cat: 'monthly', col: '청구요금',
+            msg: `전월 ${fmtMoney(p.청구요금)}→당월 ${fmtMoney(b.청구요금)} (${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%)`,
+            diff: b.청구요금 - p.청구요금 });
+        }
+      }
+      if (b.요금적용전력 > p.요금적용전력 + 1) {
+        issues.push({ code: 'D20', level: 'warning', cat: 'monthly', col: '요금적용전력',
+          msg: `전월 ${p.요금적용전력}→당월 ${b.요금적용전력}kW (+${b.요금적용전력 - p.요금적용전력}) — 1년 기본요금↑`,
+          diff: b.요금적용전력 - p.요금적용전력 });
+      }
+    }
+
+    // ═════ E. 중복/누락 ═════
+    const dups = billsByCust[b.custNo];
+    if (dups.length > 1 && dups[0]._rowIdx === b._rowIdx) {
+      const tU = dups.reduce((s, x) => s + x.사용량, 0);
+      const tA = dups.reduce((s, x) => s + x.청구요금, 0);
+      issues.push({ code: 'E21', level: 'critical', cat: 'missing', col: '중복청구',
+        msg: `🔁 같은 고객번호 ${dups.length}건 청구 (합 ${fmt(tU)}kWh, ${fmtMoney(tA)}) — 중복 의심`, diff: tA });
+    }
+
+    if (issues.length > 0 || Object.keys(calcs).length > 0) {
+      out.push({ bill: b, meter: m, issues, calcs });
+    }
+  }
+
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Phase 2e — 파일 업로드 핸들러
+// ═══════════════════════════════════════════════════════════════
+let currentMeterMonth = '';
+
+async function handleFile(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    showProc(`${type === 'bill' ? '빌코리아' : '관제'} 파일 읽는 중...`, file.name);
+    const parsed = await parseFile(file);
+
+    if (type === 'bill') {
+      const colMap = buildColMap(parsed.headers, BILL_ALIASES);
+      billData = parsed.rows.map(r => normalizeBillRow(r, colMap));
+      billFileName = file.name;
+      billRawWorkbook = parsed.workbook ? {
+        wb: parsed.workbook,
+        sheetName: parsed.sheetName,
+        headerRowIdx: parsed.headerRowIdx,
+        headers: parsed.headers,
+        origBuffer: parsed.origBuffer,
+      } : null;
+      const ym = inferBillMonth(billData);
+      $('#billFile').innerHTML = `✓ ${file.name}<br><span style="font-weight:400;color:var(--text-muted);">${fmt(billData.length)}건 · 청구월 ${ym || '?'}</span>`;
+      $('#dropBill').classList.add('filled');
+      if (meterRawRows) autoMatchMonth();
+    } else {
+      const colMap = buildColMap(parsed.headers, METER_ALIASES);
+      const months = extractMeterMonths(parsed.rows, colMap);
+      meterRawRows = { rows: parsed.rows, colMap, months };
+      meterFileName = file.name;
+      autoMatchMonth();
+    }
+    checkReady();
+    hideProc();
+  } catch (err) {
+    hideProc();
+    toast(err.message, 'error');
+    console.error(err);
+  }
+}
+
+function autoMatchMonth() {
+  if (!meterRawRows) return;
+  let target = '';
+  if (billData && billData.length > 0) {
+    const billYm = inferBillMonth(billData);
+    target = billYmToMeterYm(billYm);
+  }
+  if (!target || !meterRawRows.months.includes(target)) {
+    target = meterRawRows.months[meterRawRows.months.length - 1] || '';
+  }
+  applyMeterMonth(target);
+}
+
+function applyMeterMonth(yyyymm) {
+  if (!meterRawRows) return;
+  currentMeterMonth = yyyymm;
+  meterData = aggregateMeter(meterRawRows.rows, meterRawRows.colMap, yyyymm);
+  const custCount = Object.keys(meterData).length;
+  const options = meterRawRows.months.map(ym =>
+    `<option value="${ym}" ${ym === currentMeterMonth ? 'selected' : ''}>${ym.substring(0,4)}년 ${ym.substring(4,6)}월</option>`
+  ).join('');
+  const billYm = billData ? inferBillMonth(billData) : '';
+  const expectedYm = billYm ? billYmToMeterYm(billYm) : '';
+  const matchNote = !expectedYm ? '' : (expectedYm === currentMeterMonth
+    ? '<span style="color:var(--ok);font-size:11px;">✓ 청구월 매칭</span>'
+    : `<span style="color:var(--warn);font-size:11px;">⚠ 청구월(${expectedYm}) 아님</span>`);
+  $('#meterFile').innerHTML = `
+    ✓ ${meterFileName}<br>
+    <span style="font-weight:400;color:var(--text-muted);">${fmt(custCount)}개 고객 · ${fmt(meterRawRows.rows.length)}개 충전기</span><br>
+    <div style="margin-top:6px;display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap;" onclick="event.preventDefault();event.stopPropagation();">
+      <span style="font-size:11px;color:var(--text-muted);">요금년월:</span>
+      <select onclick="event.stopPropagation()" onchange="applyMeterMonth(this.value)" style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;">${options}</select>
+      ${matchNote}
+    </div>`;
+  $('#dropMeter').classList.add('filled');
+}
+
+function clearFile(type) {
+  if (type === 'bill') {
+    billData = null; billFileName = ''; billRawWorkbook = null;
+    $('#billFile').textContent = '';
+    $('#dropBill').classList.remove('filled');
+    $('#dropBill input').value = '';
+  } else {
+    meterData = null; meterRawRows = null; currentMeterMonth = '';
+    meterFileName = '';
+    $('#meterFile').textContent = '';
+    $('#dropMeter').classList.remove('filled');
+    $('#dropMeter input').value = '';
+  }
+  checkReady();
+}
+
+function checkReady() {
+  const btn = $('#runBtn');
+  if (btn) btn.disabled = !(billData && meterData);
+}
+
+// 드래그앤드롭
+document.addEventListener('DOMContentLoaded', () => {
+  ['dropBill', 'dropMeter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('active'); });
+    el.addEventListener('dragleave', () => el.classList.remove('active'));
+    el.addEventListener('drop', (e) => {
+      e.preventDefault(); el.classList.remove('active');
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const input = el.querySelector('input[type=file]');
+      const dt = new DataTransfer(); dt.items.add(file);
+      input.files = dt.files;
+      input.dispatchEvent(new Event('change'));
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  Phase 2f — 검증 실행 + 결과 렌더링
+// ═══════════════════════════════════════════════════════════════
+async function runValidation() {
+  if (!billData || !meterData) return;
+  showProc('검증 중...', `${fmt(billData.length)}건 처리`);
+  await new Promise(r => setTimeout(r, 100));
+
+  try {
+    // 전월 데이터 조회 (월간 비교)
+    const billYm = inferBillMonth(billData);
+    const prevYm = prevYyyymm(billYm);
+    let prevBills = null;
+    if (prevYm) {
+      try { prevBills = await db.bills.where('yyyymm').equals(prevYm).toArray(); }
+      catch (e) { prevBills = null; }
+    }
+
+    validationResults = validate(billData, meterData, prevBills && prevBills.length ? prevBills : null);
+
+    // 해지/누락/신규 감지 (누적 데이터 있을 때만)
+    if (billYm) {
+      try {
+        const extra = await detectMissingAndNew(billData, billYm);
+        for (const e of extra) {
+          validationResults.push({ bill: e.bill, meter: null, issues: [e], calcs: {} });
+        }
+      } catch (err) { console.warn('missing detect:', err); }
+    }
+
+    // 현재 월 데이터를 IndexedDB에 저장
+    if (billYm) {
+      const totalAmount = billData.reduce((s, b) => s + (b.청구요금 || 0), 0);
+      await db.months.put({
+        yyyymm: billYm,
+        billCount: billData.length,
+        totalAmount,
+        uploadedAt: new Date().toISOString(),
+      });
+      // 청구건 저장 (월간비교용)
+      const billRecords = billData.map(b => ({ ...b, yyyymm: billYm }));
+      try { await db.bills.bulkPut(billRecords); } catch (e) { console.warn(e); }
+    }
+
+    // 실행 이력
+    const crit = validationResults.filter(r => r.issues.some(i => i.level === 'critical')).length;
+    const warn = validationResults.filter(r => r.issues.some(i => i.level === 'warning')).length;
+    const totalDiff = validationResults
+      .filter(r => r.issues.some(i => i.level === 'critical'))
+      .reduce((s, r) => s + r.issues.filter(i => i.level === 'critical').reduce((a, i) => a + Math.abs(i.diff || 0), 0), 0);
+    await db.runs.add({ runAt: new Date().toISOString(), yyyymm: billYm, total: billData.length, crit, warn, totalDiff });
+
+    updateBadges();
+    navigate('dashboard');
+    toast(`검증 완료: 치명 ${crit}건 · 주의 ${warn}건`, 'success');
+    hideProc();
+  } catch (err) {
+    hideProc();
+    toast('검증 실패: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+function updateBadges() {
+  const cats = { money: 0, usage: 0, anomaly: 0, monthly: 0, contract: 0, missing: 0 };
+  for (const r of validationResults) {
+    for (const i of r.issues) if (cats[i.cat] != null) cats[i.cat]++;
+  }
+  for (const k in cats) {
+    const el = document.getElementById('badge-' + k);
+    if (!el) continue;
+    el.textContent = cats[k];
+    el.className = 'nav-badge' + (cats[k] === 0 ? ' zero' : '');
+  }
+}
+
+// 카테고리 렌더링 교체
+function renderCategory(view) {
+  const titles = {
+    'cat-money': { t: '💰 금액 검증', s: '기본요금·공급가액·부가세·전력기금·합산 한전 계산 오류', h: '금액 관련 이슈' },
+    'cat-usage': { t: '⚡ 사용량 검증', s: '관제 vs 한전 시간대별 교차비교 (손실·과소청구 의심)', h: '사용량 불일치' },
+    'cat-anomaly': { t: '🚨 데이터 이상', s: '한전 측 0값 · 미납 · 검침기간 · 계량기 이상 의심', h: '한전 데이터 이상' },
+    'cat-monthly': { t: '📈 월간 변동', s: '전월 대비 사용량·금액·요금적용전력 급변', h: '월간 변동 감지' },
+    'cat-contract': { t: '🔌 계약 적정성', s: '정격용량 합 vs 계약전력 · 과다/과소 계약 리스크', h: '계약 전력 관련' },
+    'cat-missing': { t: '🔁 중복 · 누락', s: '중복청구 · 기간 겹침 · 한전 누락(해지 아님) 자동 판별', h: '중복 및 누락' },
+  };
+  const catKey = view.replace('cat-', '');
+  const info = titles[view] || { t: '검증 결과', s: '', h: '항목' };
+  $('#catTitle').textContent = info.t;
+  $('#catSub').textContent = info.s;
+  $('#catHeadTitle').textContent = info.h;
+
+  const rows = [];
+  for (const r of validationResults) {
+    for (const i of r.issues) {
+      if (i.cat === catKey) rows.push({ ...i, bill: r.bill, meter: r.meter });
+    }
+  }
+  rows.sort((a, b) => {
+    const order = { critical: 0, warning: 1, info: 2 };
+    return (order[a.level] - order[b.level]) || Math.abs(b.diff || 0) - Math.abs(a.diff || 0);
+  });
+
+  $('#catHeadCount').textContent = `${rows.length}건`;
+
+  if (rows.length === 0) {
+    $('#catBody').innerHTML = validationResults.length === 0
+      ? `<div class="empty"><div class="empty-icon">⏳</div><div class="empty-title">검증 실행 전</div><div class="empty-sub">파일 업로드 → 검증 시작 버튼</div></div>`
+      : `<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">이 카테고리에는 이슈 없음</div><div class="empty-sub">정상 범위</div></div>`;
+    return;
+  }
+
+  const tbl = `
+    <table class="issue-table">
+      <thead><tr>
+        <th style="width:80px;">코드</th>
+        <th style="width:120px;">고객번호</th>
+        <th>주소/충전소</th>
+        <th>내용</th>
+        <th style="width:140px;">차이</th>
+      </tr></thead>
+      <tbody>${rows.map(r => `
+        <tr class="issue-row ${r.level}">
+          <td>
+            <div class="issue-code ${r.level}">${r.code}</div>
+            <div class="issue-col">${r.col || ''}</div>
+          </td>
+          <td class="issue-cust">${r.bill.custNo}</td>
+          <td class="issue-addr">${escapeHtml(r.bill.주소 || (r.meter && r.meter.충전소명) || '')}</td>
+          <td class="issue-detail">${escapeHtml(r.msg)}</td>
+          <td class="issue-diff">${r.diff != null ? `<span class="${r.diff > 0 ? 'diff-plus' : 'diff-minus'}">${r.diff > 0 ? '+' : ''}${fmt(r.diff)}</span>` : '-'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  $('#catBody').innerHTML = tbl;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Top 5 대시보드 이슈
+function renderTopIssues() {
+  const all = [];
+  for (const r of validationResults) {
+    for (const i of r.issues) all.push({ ...i, bill: r.bill, meter: r.meter });
+  }
+  all.sort((a, b) => {
+    const order = { critical: 0, warning: 1, info: 2 };
+    return (order[a.level] - order[b.level]) || Math.abs(b.diff || 0) - Math.abs(a.diff || 0);
+  });
+  const top = all.slice(0, 5);
+  if (top.length === 0) return;
+  $('#topIssuesBody').innerHTML = `
+    <table class="issue-table">
+      <thead><tr>
+        <th style="width:60px;">코드</th>
+        <th style="width:120px;">고객</th>
+        <th>내용</th>
+        <th style="width:100px;">차이</th>
+      </tr></thead>
+      <tbody>${top.map(r => `
+        <tr class="issue-row ${r.level}">
+          <td><div class="issue-code ${r.level}">${r.code}</div></td>
+          <td class="issue-cust">${r.bill.custNo}</td>
+          <td class="issue-detail">${escapeHtml(r.msg)}</td>
+          <td class="issue-diff">${r.diff != null ? `<span class="${r.diff > 0 ? 'diff-plus' : 'diff-minus'}">${r.diff > 0 ? '+' : ''}${fmt(r.diff)}</span>` : '-'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// renderDashboard 보강 — top issues도 렌더
+const _origRenderDash = renderDashboard;
+renderDashboard = async function() {
+  await _origRenderDash();
+  if (validationResults && validationResults.length > 0) renderTopIssues();
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  Phase 3 — 1년치 배치 업로드
+// ═══════════════════════════════════════════════════════════════
+async function handleBatch(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    showProc('배치 파일 읽는 중...', file.name);
+    const parsed = await parseFile(file);
+
+    if (type === 'bill') {
+      const colMap = buildColMap(parsed.headers, BILL_ALIASES);
+      const rows = parsed.rows.map(r => normalizeBillRow(r, colMap));
+      // 청구년월별로 그룹
+      const byMonth = {};
+      for (const r of rows) {
+        const ym = r.billYyyymm;
+        if (!ym) continue;
+        if (!byMonth[ym]) byMonth[ym] = [];
+        byMonth[ym].push(r);
+      }
+      const months = Object.keys(byMonth).sort();
+      showProc('데이터 저장 중...', `${months.length}개월 저장`);
+
+      for (const ym of months) {
+        const list = byMonth[ym];
+        const totalAmount = list.reduce((s, b) => s + (b.청구요금 || 0), 0);
+        await db.months.put({
+          yyyymm: ym,
+          billCount: list.length,
+          totalAmount,
+          uploadedAt: new Date().toISOString(),
+        });
+        // 기존 월 데이터 삭제 후 재저장
+        await db.bills.where('yyyymm').equals(ym).delete();
+        const records = list.map(b => ({ ...b, yyyymm: ym }));
+        // 대용량은 청크로
+        const CHUNK = 500;
+        for (let i = 0; i < records.length; i += CHUNK) {
+          await db.bills.bulkPut(records.slice(i, i + CHUNK));
+        }
+      }
+
+      $('#batchResult').innerHTML = `
+        <div class="sum-card good" style="margin-top:12px;">
+          <div class="sum-label">✓ 빌코리아 배치 업로드 완료</div>
+          <div class="sum-value" style="font-size:16px;margin-top:8px;">${months.length}개월 · ${fmt(rows.length)}건 저장</div>
+          <div class="sum-sub">${months[0]} ~ ${months[months.length-1]}</div>
+        </div>`;
+      toast(`${months.length}개월 저장 완료`, 'success');
+    } else {
+      // 관제 1년치
+      const colMap = buildColMap(parsed.headers, METER_ALIASES);
+      const months = extractMeterMonths(parsed.rows, colMap);
+
+      showProc('관제 데이터 저장 중...', `${months.length}개월 · ${fmt(parsed.rows.length)}건`);
+      for (const ym of months) {
+        const filtered = parsed.rows.filter(r => extractYyyymm(r[colMap.yyyymm]) === ym);
+        const agg = aggregateMeter(filtered, colMap, ym);
+        await db.meters.where('yyyymm').equals(ym).delete();
+        const records = Object.values(agg).map(m => ({ ...m, yyyymm: ym }));
+        const CHUNK = 500;
+        for (let i = 0; i < records.length; i += CHUNK) {
+          await db.meters.bulkPut(records.slice(i, i + CHUNK));
+        }
+      }
+
+      $('#batchResult').innerHTML = `
+        <div class="sum-card info" style="margin-top:12px;">
+          <div class="sum-label">✓ 관제 배치 업로드 완료</div>
+          <div class="sum-value" style="font-size:16px;margin-top:8px;">${months.length}개월 · ${fmt(parsed.rows.length)}개 충전기</div>
+          <div class="sum-sub">${months[0]} ~ ${months[months.length-1]}</div>
+        </div>`;
+      toast(`관제 ${months.length}개월 저장 완료`, 'success');
+    }
+
+    renderDashboard();
+    hideProc();
+  } catch (err) {
+    hideProc();
+    toast('배치 실패: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+// 배치 업로드 후 특정 월 검증 실행
+async function runMonthValidation(yyyymm) {
+  showProc(`${yyyymm} 검증 중...`, '');
+  await new Promise(r => setTimeout(r, 100));
+  try {
+    const bills = await db.bills.where('yyyymm').equals(yyyymm).toArray();
+    const meterYm = billYmToMeterYm(yyyymm);
+    const meterRecs = await db.meters.where('yyyymm').equals(meterYm).toArray();
+    const meterByCust = {};
+    for (const m of meterRecs) meterByCust[m.custNo] = m;
+
+    const prevYm = prevYyyymm(yyyymm);
+    let prevBills = null;
+    if (prevYm) {
+      prevBills = await db.bills.where('yyyymm').equals(prevYm).toArray();
+    }
+
+    validationResults = validate(bills, meterByCust, prevBills && prevBills.length ? prevBills : null);
+
+    // 해지/누락/신규 감지
+    try {
+      const extra = await detectMissingAndNew(bills, yyyymm);
+      for (const e of extra) {
+        validationResults.push({ bill: e.bill, meter: null, issues: [e], calcs: {} });
+      }
+    } catch (err) { console.warn('missing detect:', err); }
+
+    billData = bills;
+    meterData = meterByCust;
+
+    const crit = validationResults.filter(r => r.issues.some(i => i.level === 'critical')).length;
+    const warn = validationResults.filter(r => r.issues.some(i => i.level === 'warning')).length;
+    const totalDiff = validationResults
+      .filter(r => r.issues.some(i => i.level === 'critical'))
+      .reduce((s, r) => s + r.issues.filter(i => i.level === 'critical').reduce((a, i) => a + Math.abs(i.diff || 0), 0), 0);
+    await db.runs.add({ runAt: new Date().toISOString(), yyyymm, total: bills.length, crit, warn, totalDiff });
+
+    updateBadges();
+    navigate('dashboard');
+    toast(`${yyyymm} 검증 완료: 치명 ${crit} · 주의 ${warn}`, 'success');
+    hideProc();
+  } catch (err) {
+    hideProc();
+    toast('실패: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Phase 5a — 해지/누락/신규 감지 (월간 누적 데이터 기반)
+// ═══════════════════════════════════════════════════════════════
+async function detectMissingAndNew(currentBills, currentYm) {
+  const extra = []; // { code, level, cat, col, msg, bill, meter, diff }
+
+  // 이전 N개월 데이터 조회 (최근 3개월)
+  const targetYms = [];
+  let y = +currentYm.substring(0,4), m = +currentYm.substring(4,6);
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date(y, m - 1 - i, 1);
+    targetYms.push(d.getFullYear() + String(d.getMonth() + 1).padStart(2,'0'));
+  }
+
+  // 이전 월별 고객 집합
+  const monthsData = {};
+  for (const ym of targetYms) {
+    const bs = await db.bills.where('yyyymm').equals(ym).toArray();
+    monthsData[ym] = { bills: bs, custs: new Set(bs.map(b => b.custNo)) };
+  }
+
+  const currentCusts = new Set(currentBills.map(b => b.custNo));
+
+  // ───── 누락 감지 (이전에 있었던 고객이 이번 달 없어짐)
+  const prev1 = monthsData[targetYms[0]];
+  if (prev1 && prev1.custs.size > 0) {
+    const missing = [];
+    for (const cust of prev1.custs) {
+      if (!currentCusts.has(cust)) missing.push(cust);
+    }
+
+    // 각 누락 고객에 대해: 2개월 연속 없으면 해지, 아니면 한전 누락
+    const prev2 = monthsData[targetYms[1]];
+    for (const cust of missing) {
+      const existsInPrev2 = prev2 ? prev2.custs.has(cust) : true;
+      const prevBill = prev1.bills.find(b => b.custNo === cust);
+      const addr = prevBill?.주소 || '';
+
+      if (existsInPrev2) {
+        // 1개월만 빠짐 = 한전 누락 의심
+        extra.push({
+          code: 'F22',
+          level: 'critical',
+          cat: 'missing',
+          col: '누락',
+          msg: `⚠️ 전월(${targetYms[0]})에는 청구 있었으나 이번 달 누락 — 한전 청구서 누락 의심`,
+          bill: { custNo: cust, 주소: addr, billYyyymm: currentYm, _rowIdx: null },
+          diff: prevBill?.청구요금 || 0,
+        });
+      } else {
+        // 2개월 연속 없음 = 해지
+        extra.push({
+          code: 'F23',
+          level: 'info',
+          cat: 'missing',
+          col: '해지',
+          msg: `🔻 2개월 연속 청구 없음 — 계약 해지로 판별`,
+          bill: { custNo: cust, 주소: addr, billYyyymm: currentYm, _rowIdx: null },
+        });
+      }
+    }
+  }
+
+  // ───── 신규 감지 (이번 달 처음 나타난 고객번호)
+  if (prev1 && prev1.custs.size > 0) {
+    for (const b of currentBills) {
+      if (!prev1.custs.has(b.custNo)) {
+        // 3개월 이력 전체에서도 없는 경우만 "진짜 신규"
+        let everSeen = false;
+        for (const ym of targetYms) {
+          if (monthsData[ym]?.custs.has(b.custNo)) { everSeen = true; break; }
+        }
+        if (!everSeen) {
+          extra.push({
+            code: 'F24',
+            level: 'info',
+            cat: 'missing',
+            col: '신규',
+            msg: `🆕 이번 달 신규 등장 — 신규 충전소 개설 또는 충전기 증설`,
+            bill: b,
+          });
+        }
+      }
+    }
+  }
+
+  return extra;
+}
+async function exportExcel() {
+  if (!validationResults || validationResults.length === 0) {
+    toast('검증 결과가 없습니다', 'error');
+    return;
+  }
+  showProc('엑셀 생성 중...', '');
+  await new Promise(r => setTimeout(r, 50));
+
+  try {
+    const wb = new ExcelJS.Workbook();
+    let ws, headers, headerRowIdx, colIdxMap = {};
+
+    const hasOrig = billRawWorkbook && billRawWorkbook.origBuffer;
+    if (hasOrig) {
+      // 원본 XLSX 로드하여 색칠
+      await wb.xlsx.load(billRawWorkbook.origBuffer);
+      ws = wb.getWorksheet(billRawWorkbook.sheetName) || wb.worksheets[0];
+      headers = billRawWorkbook.headers;
+      headerRowIdx = billRawWorkbook.headerRowIdx;
+      headers.forEach((h, i) => { if (h) colIdxMap[h] = i + 1; });
+    } else {
+      // CSV였거나 빌 원본 없으면 새 시트로 구성
+      ws = wb.addWorksheet('검증결과', { views: [{ state: 'frozen', ySplit: 1 }] });
+      headers = ['고객번호', '청구년월', '주소', '계약전력', '요금적용전력', '기본요금', '사용량', '심야 사용량', '주간 사용량', '저녁 사용량', '공급가액', '부가가치세', '전력기금', '청구요금'];
+      ws.addRow(headers);
+      headers.forEach((h, i) => { colIdxMap[h] = i + 1; });
+      for (const r of validationResults) {
+        const b = r.bill;
+        ws.addRow([b.custNo, b.billYyyymm, b.주소, b.계약전력, b.요금적용전력, b.기본요금, b.사용량, b.심야사용량, b.주간사용량, b.저녁사용량, b.공급가액, b.부가가치세, b.전력기금, b.청구요금]);
+      }
+      headerRowIdx = 0;
+    }
+
+    // 색상
+    const fillCrit = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFECACA' } };
+    const fillWarn = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE68A' } };
+    const fillInfo = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBFDBFE' } };
+    const fillCalc = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F7FD' } }; // 에버온 연파랑
+
+    // Claude 계산값 열 추가 (맨 뒤)
+    const claudeCols = [
+      { key: '시간대합계산', title: 'Claude_시간대합' },
+      { key: '기본요금계산', title: 'Claude_기본요금' },
+      { key: '공급가액계산', title: 'Claude_공급가액' },
+      { key: '부가세계산', title: 'Claude_부가세' },
+      { key: '전력기금계산', title: 'Claude_전력기금' },
+      { key: '청구요금계산', title: 'Claude_청구요금' },
+      { key: '데이터상태', title: 'Claude_데이터상태' },
+    ];
+    const flagCol = { title: 'Claude_플래그' };
+
+    const firstNewCol = headers.length + 1;
+    const headerRow = headerRowIdx + 1;
+    // 계산값 헤더
+    claudeCols.forEach((c, i) => {
+      const cell = ws.getCell(headerRow, firstNewCol + i);
+      cell.value = c.title;
+      cell.font = { bold: true, color: { argb: 'FF16ACE3' } };
+      cell.fill = fillCalc;
+    });
+    // 플래그 헤더
+    const flagColIdx = firstNewCol + claudeCols.length;
+    const flagHeaderCell = ws.getCell(headerRow, flagColIdx);
+    flagHeaderCell.value = flagCol.title;
+    flagHeaderCell.font = { bold: true, color: { argb: 'FFDC2626' } };
+    flagHeaderCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2F2' } };
+
+    // 이슈 카테고리 → 컬럼 매핑 (셀 색칠 대상)
+    const resolveCols = (name) => {
+      const aliases = {
+        '사용량': ['사용량'],
+        '기본요금': ['기본요금'],
+        '요금적용전력': ['요금적용전력'],
+        '초과요금': ['초과요금'],
+        '공급가액': ['공급가액'],
+        '부가가치세': ['부가가치세'],
+        '전력기금': ['전력기금'],
+        '청구요금': ['청구요금'],
+        '미납요금': ['미납요금'],
+        '계약전력': ['계약전력'],
+        '시간대별': ['심야 사용량', '주간 사용량', '저녁 사용량'],
+        '심야사용량': ['심야 사용량'],
+        '주간사용량': ['주간 사용량'],
+        '저녁사용량': ['저녁 사용량'],
+        '검침기간': ['사용시작', '사용끝'],
+        '전월지침': ['전월지침_경', '전월지침_중', '전월지침_최'],
+        '총사용량': ['사용량'],
+        '중복청구': ['고객번호'],
+      };
+      const list = aliases[name] || [name];
+      return list.map(n => colIdxMap[n]).filter(Boolean);
+    };
+
+    // 행별 색칠 + 계산값 + 플래그
+    for (const r of validationResults) {
+      if (!r.bill || r.bill._rowIdx == null) continue;
+      const excelRow = hasOrig ? r.bill._rowIdx + 1 : validationResults.indexOf(r) + 2;
+
+      const worst = r.issues.some(i => i.level === 'critical') ? 'critical'
+                  : r.issues.some(i => i.level === 'warning') ? 'warning'
+                  : r.issues.length > 0 ? 'info' : null;
+
+      // 고객번호 열 색칠
+      if (worst) {
+        const fill = worst === 'critical' ? fillCrit : worst === 'warning' ? fillWarn : fillInfo;
+        const custCol = colIdxMap['고객번호'];
+        if (custCol) ws.getCell(excelRow, custCol).fill = fill;
+      }
+
+      // 이슈별 컬럼 색칠 + 코멘트
+      for (const iss of r.issues) {
+        const cols = resolveCols(iss.col);
+        const fill = iss.level === 'critical' ? fillCrit : iss.level === 'warning' ? fillWarn : fillInfo;
+        for (const c of cols) {
+          const cell = ws.getCell(excelRow, c);
+          cell.fill = fill;
+          const existing = cell.note?.texts?.[0]?.text || '';
+          const newNote = `[${iss.code}] ${iss.msg}`;
+          cell.note = existing
+            ? { texts: [{ text: existing + '\n\n' + newNote }] }
+            : { texts: [{ text: newNote }] };
+        }
+      }
+
+      // Claude 계산값 열 채우기
+      claudeCols.forEach((c, i) => {
+        const v = r.calcs[c.key];
+        if (v != null && v !== '') {
+          const cell = ws.getCell(excelRow, firstNewCol + i);
+          cell.value = typeof v === 'number' ? v : String(v);
+          cell.fill = fillCalc;
+          if (typeof v === 'number') cell.numFmt = '#,##0';
+        }
+      });
+
+      // 플래그 열 (정보없음/0값 의심)
+      const flags = [];
+      if (r.calcs.데이터상태) flags.push(r.calcs.데이터상태);
+      if (r.issues.some(i => i.code === 'A9')) flags.push('시간대 0값');
+      if (r.issues.some(i => i.code === 'A12')) flags.push('전월지침 0');
+      if (r.issues.some(i => i.code === 'A10')) flags.push('미납');
+      if (r.issues.some(i => i.code === 'E21')) flags.push('중복청구');
+      if (flags.length > 0) {
+        const cell = ws.getCell(excelRow, flagColIdx);
+        cell.value = flags.join(', ');
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2F2' } };
+        cell.font = { color: { argb: 'FFDC2626' }, bold: true };
+      }
+    }
+
+    // 검증요약 시트
+    const sumSheet = wb.addWorksheet('검증요약', { views: [{ state: 'frozen', ySplit: 1 }] });
+    sumSheet.columns = [
+      { header: '코드', key: 'code', width: 8 },
+      { header: '레벨', key: 'level', width: 10 },
+      { header: '카테고리', key: 'cat', width: 10 },
+      { header: '고객번호', key: 'cust', width: 14 },
+      { header: '주소/충전소', key: 'addr', width: 40 },
+      { header: '항목', key: 'col', width: 15 },
+      { header: '내용', key: 'msg', width: 80 },
+      { header: '차액', key: 'diff', width: 14, style: { numFmt: '#,##0' } },
+    ];
+    sumSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    sumSheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2A44' } };
+
+    const catName = { money: '금액', usage: '사용량', anomaly: '이상', monthly: '월간', contract: '계약', missing: '중복/누락' };
+    for (const r of validationResults) {
+      for (const iss of r.issues) {
+        const row = sumSheet.addRow({
+          code: iss.code,
+          level: iss.level === 'critical' ? '치명' : iss.level === 'warning' ? '주의' : '참고',
+          cat: catName[iss.cat] || iss.cat,
+          cust: r.bill?.custNo || '',
+          addr: r.bill?.주소 || r.meter?.충전소명 || '',
+          col: iss.col,
+          msg: iss.msg,
+          diff: iss.diff || ''
+        });
+        const fill = iss.level === 'critical' ? fillCrit : iss.level === 'warning' ? fillWarn : fillInfo;
+        row.getCell('level').fill = fill;
+      }
+    }
+
+    // 메타 시트 (검증 정보)
+    const metaSheet = wb.addWorksheet('검증정보');
+    metaSheet.addRow(['검증 일시', new Date().toLocaleString('ko-KR')]);
+    metaSheet.addRow(['청구월', inferBillMonth(billData)]);
+    metaSheet.addRow(['총 청구건', billData.length]);
+    metaSheet.addRow(['관제 고객수', Object.keys(meterData || {}).length]);
+    metaSheet.addRow(['치명적 이슈', validationResults.filter(r => r.issues.some(i => i.level === 'critical')).length]);
+    metaSheet.addRow(['주의 이슈', validationResults.filter(r => r.issues.some(i => i.level === 'warning')).length]);
+    metaSheet.addRow(['참고', validationResults.filter(r => r.issues.every(i => i.level === 'info')).length]);
+    metaSheet.addRow([]);
+    metaSheet.addRow(['▼ 설정값']);
+    metaSheet.addRow(['기후환경요금 단가', settings.climateCharge]);
+    metaSheet.addRow(['연료비 조정 단가', settings.fuelAdjust]);
+    metaSheet.addRow(['부가세율 %', settings.vatRate]);
+    metaSheet.addRow(['전력기금율 %', settings.fundRate]);
+    metaSheet.addRow(['AC 손실 허용 %', settings.acLossRate]);
+    metaSheet.addRow(['정격용량 허용차 kW', settings.capTol]);
+    metaSheet.getColumn(1).width = 20;
+    metaSheet.getColumn(2).width = 20;
+
+    // 다운로드
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const now = new Date();
+    const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    const ym = inferBillMonth(billData) || 'unknown';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `에버온_전기요금검증_${ym}_${ts}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    hideProc();
+    toast('엑셀 다운로드 완료', 'success');
+  } catch (err) {
+    hideProc();
+    toast('엑셀 생성 실패: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  설정
+// ═══════════════════════════════════════════════════════════════
+async function loadSettings() {
+  try {
+    const saved = await db.config.get('settings');
+    if (saved?.value) settings = { ...DEFAULT_SETTINGS, ...saved.value };
+  } catch (e) {}
+  fillSettings();
+}
+function fillSettings() {
+  $('#set_climate').value = settings.climateCharge;
+  $('#set_fuel').value = settings.fuelAdjust;
+  $('#set_vat').value = settings.vatRate;
+  $('#set_fund').value = settings.fundRate;
+  $('#set_amtTol').value = settings.amountTol;
+  $('#set_acLoss').value = settings.acLossRate;
+  $('#set_excess').value = settings.excessTol;
+  $('#set_capTol').value = settings.capTol;
+  $('#set_mapNight').value = settings.mapNight;
+  $('#set_mapMid').value = settings.mapMid;
+  $('#set_mapPeak').value = settings.mapPeak;
+  $('#set_avgKwh').value = settings.avgKwhPerCharger;
+  $('#set_inactiveMonths').value = settings.inactiveMonths;
+}
+async function saveSettings() {
+  settings = {
+    climateCharge: +$('#set_climate').value,
+    fuelAdjust: +$('#set_fuel').value,
+    vatRate: +$('#set_vat').value,
+    fundRate: +$('#set_fund').value,
+    amountTol: +$('#set_amtTol').value,
+    acLossRate: +$('#set_acLoss').value,
+    excessTol: +$('#set_excess').value,
+    capTol: +$('#set_capTol').value,
+    mapNight: $('#set_mapNight').value,
+    mapMid: $('#set_mapMid').value,
+    mapPeak: $('#set_mapPeak').value,
+    avgKwhPerCharger: +$('#set_avgKwh').value,
+    inactiveMonths: +$('#set_inactiveMonths').value,
+  };
+  await db.config.put({ key: 'settings', value: settings });
+  toast('설정이 저장되었습니다', 'success');
+  closeModal('settings');
+}
+function resetSettings() { settings = { ...DEFAULT_SETTINGS }; fillSettings(); }
+
+// ═══════════════════════════════════════════════════════════════
+//  이력 / 백업
+// ═══════════════════════════════════════════════════════════════
+async function renderHistory() {
+  const months = await db.months.orderBy('yyyymm').reverse().toArray();
+  const list = $('#historyList');
+  if (months.length === 0) {
+    list.innerHTML = '<div class="empty" style="padding:32px 12px;"><div class="empty-sub">저장된 월 데이터가 없습니다</div></div>';
+    return;
+  }
+  list.innerHTML = months.map(m => `
+    <div class="history-item">
+      <div>
+        <div class="history-month">${m.yyyymm.substring(0,4)}년 ${m.yyyymm.substring(4,6)}월</div>
+        <div class="history-meta">${fmt(m.billCount)}건 · ${fmtMoney(m.totalAmount)}</div>
+      </div>
+      <button class="history-del" onclick="deleteMonth('${m.yyyymm}')">삭제</button>
+    </div>
+  `).join('');
+}
+async function deleteMonth(yyyymm) {
+  if (!confirm(`${yyyymm} 데이터를 삭제할까요?`)) return;
+  await db.months.delete(yyyymm);
+  await db.bills.where('yyyymm').equals(yyyymm).delete();
+  await db.meters.where('yyyymm').equals(yyyymm).delete();
+  renderHistory();
+  toast('삭제되었습니다');
+}
+async function exportBackup() {
+  const months = await db.months.toArray();
+  const runs = await db.runs.toArray();
+  const config = await db.config.toArray();
+  const backup = { version: 2, exportedAt: new Date().toISOString(), months, runs, config };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `everon_backup_${new Date().toISOString().substring(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('백업을 다운로드했습니다', 'success');
+}
+async function importBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const backup = JSON.parse(text);
+    if (!confirm('기존 데이터를 덮어쓰고 백업을 복원할까요?')) return;
+    await db.months.clear(); await db.runs.clear(); await db.config.clear();
+    if (backup.months) await db.months.bulkAdd(backup.months);
+    if (backup.runs) await db.runs.bulkAdd(backup.runs);
+    if (backup.config) await db.config.bulkAdd(backup.config);
+    await loadSettings();
+    renderHistory();
+    toast('복원되었습니다', 'success');
+  } catch (err) {
+    toast('복원 실패: ' + err.message, 'error');
+  }
+}
+
+// 모달
+function openModal(name) {
+  const map = { settings: 'modalSettings', history: 'modalHistory', batch: 'modalBatch' };
+  $('#' + map[name]).classList.add('active');
+  if (name === 'history') renderHistory();
+  if (name === 'settings') fillSettings();
+}
+function closeModal(name) {
+  const map = { settings: 'modalSettings', history: 'modalHistory', batch: 'modalBatch' };
+  $('#' + map[name]).classList.remove('active');
+}
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', (e) => { if (e.target === bg) bg.classList.remove('active'); });
+});
+
+// 초기화
+async function init() {
+  await loadSettings();
+  await renderDashboard();
+}
+
+// 자동 로그인 (세션 유지)
+if (sessionStorage.getItem('everon_auth') === '1') {
+  enterApp();
+}
+</script>
+
+</body>
+</html>
