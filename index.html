@@ -302,7 +302,7 @@
   <div class="topbar">
     <div class="topbar-left">
       <div class="everon-logo-img topbar-logo-img" onclick="navigate('dashboard')" title="대시보드로 이동" aria-label="에버온 홈"></div>
-      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V5</span></div>
+      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V6</span></div>
     </div>
     <div class="topbar-right">
       <span class="topbar-user" id="topbarUser">everon</span>
@@ -1154,7 +1154,8 @@ async function loadMonthValidation(yyyymm) {
     const meterRecs = await db.meters.where('yyyymm').equals(meterYm).toArray();
     const mByCust = {};
     for (const m of meterRecs) mByCust[m.custNo] = m;
-    meterData = mByCust;
+    // V6 — 저장된 관제는 byCust만 있음, byPeriod는 fallback 경로
+    meterData = { byPeriod: {}, byCust: mByCust };
     sessionStorage.setItem('everon_last_ym', yyyymm);
     updateBadges();
     navigate('dashboard');
@@ -1486,6 +1487,30 @@ const prevYyyymm = (ym) => {
 };
 const billYmToMeterYm = (ym) => prevYyyymm(ym); // 청구 4월 = 관제 3월
 
+// V6 — 날짜 정규화: 어떤 포맷이든 YYYY-MM-DD 로
+// 빌코리아: '20251126' (8자리) 또는 '2025-11-26' 또는 '2025/11/26'
+// 관제:     '2025-11-26 00:00:00' (시간포함)
+function normalizeDate(s) {
+  if (!s) return '';
+  const str = String(s).trim();
+  if (!str) return '';
+  // YYYYMMDD → YYYY-MM-DD
+  if (/^\d{8}$/.test(str)) {
+    return `${str.substring(0,4)}-${str.substring(4,6)}-${str.substring(6,8)}`;
+  }
+  // YYYY-MM-DD... 또는 YYYY/MM/DD... → 앞 10자 추출
+  const m = str.match(/(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+  if (m) {
+    return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  }
+  return str;
+}
+
+// V6 — 고객번호+사용시작+사용끝 매칭 키
+function periodKey(custNo, useStart, useEnd) {
+  return `${custNo}|${normalizeDate(useStart)}|${normalizeDate(useEnd)}`;
+}
+
 // 빌코리아 컬럼 별칭
 const BILL_ALIASES = {
   custNo: ['고객번호'],
@@ -1678,8 +1703,15 @@ function normalizeBillRow(r, m) {
   };
 }
 
+// V6 — 관제 집계: (고객번호 + 사용시작 + 사용끝) 키로 집계
+// 반환: {
+//   byCust: { custNo: {...요약...} },       // 레거시 호환용 (대표값)
+//   byPeriod: { "custNo|start|end": {...} } // V6 주 매칭용
+// }
 function aggregateMeter(rows, m, ymFilter) {
-  const by = {};
+  const byPeriod = {};
+  const byCust = {};
+
   for (const r of rows) {
     const cust = normalizeCustNo(r[m.custNo]);
     if (!cust || cust === '0000000000' || cust.replace(/0/g, '').length < 3) continue;
@@ -1687,71 +1719,74 @@ function aggregateMeter(rows, m, ymFilter) {
       const ym = extractYyyymm(r[m.yyyymm]);
       if (ym !== ymFilter) continue;
     }
-    if (!by[cust]) {
-      by[cust] = {
+
+    // V6 — 날짜 기반 키
+    const startD = m.startDate ? normalizeDate(r[m.startDate]) : '';
+    const endD = m.endDate ? normalizeDate(r[m.endDate]) : '';
+    const pKey = `${cust}|${startD}|${endD}`;
+
+    if (!byPeriod[pKey]) {
+      byPeriod[pKey] = {
         custNo: cust,
         충전소명: String(r[m.stationName] || ''),
         계약전력: num(r[m.contractPower]),
         요금년월: String(r[m.yyyymm] || ''),
+        사용시작: startD,
+        사용끝: endD,
         경부하합: 0, 중부하합: 0, 최대부하합: 0,
         최대수요중부하합: 0, 최대수요최대부하합: 0,
         정격용량합: 0, 충전기수: 0,
         _units: {},
         _rowCount: 0,
-        _contractsByPeriod: {},  // V5 #34 — (start+end) → Set of 계약전력
+        _contractSet: new Set(),
       };
     }
-    const b = by[cust];
-    b._rowCount += 1;
+    const bp = byPeriod[pKey];
+    bp._rowCount += 1;
 
-    // V5 #34 — 같은 기간에 계약전력 다른 케이스 감지
-    const startD = m.startDate ? String(r[m.startDate] || '').trim() : '';
-    const endD = m.endDate ? String(r[m.endDate] || '').trim() : '';
-    const periodKey = startD + '|' + endD;
     const contract = num(r[m.contractPower]);
-    if (contract > 0) {
-      if (!b._contractsByPeriod[periodKey]) b._contractsByPeriod[periodKey] = new Set();
-      b._contractsByPeriod[periodKey].add(contract);
-    }
+    if (contract > 0) bp._contractSet.add(contract);
 
-    // V3 — 다채널 중복제거 (#15)
+    // 다채널 중복제거
     const rawId = String(r[m.chargerId] || '').trim();
     const baseId = rawId.replace(/[-_ ]*CH\d+$/i, '').replace(/\s+/g, ' ').trim();
     const cap = num(r[m.capacity]);
     if (baseId) {
-      if (!(baseId in b._units)) {
-        b._units[baseId] = cap;
-        b.정격용량합 += cap;
-        b.충전기수 += 1;
-      } else if (cap > b._units[baseId]) {
-        b.정격용량합 += (cap - b._units[baseId]);
-        b._units[baseId] = cap;
+      if (!(baseId in bp._units)) {
+        bp._units[baseId] = cap;
+        bp.정격용량합 += cap;
+        bp.충전기수 += 1;
+      } else if (cap > bp._units[baseId]) {
+        bp.정격용량합 += (cap - bp._units[baseId]);
+        bp._units[baseId] = cap;
       }
     } else {
-      b.정격용량합 += cap;
-      b.충전기수 += 1;
+      bp.정격용량합 += cap;
+      bp.충전기수 += 1;
     }
-    // 지침값 합산
-    b.경부하합 += num(r[m.lightReading]);
-    b.중부하합 += num(r[m.midReading]);
-    b.최대부하합 += num(r[m.peakReading]);
-    b.최대수요중부하합 += num(r[m.maxMidReading]);
-    b.최대수요최대부하합 += num(r[m.maxPeakReading]);
-  }
-  // V5 #34 — 같은 기간에 계약전력 상이 플래그 세팅
-  for (const k in by) {
-    const b = by[k];
-    const conflicts = [];
-    for (const [periodKey, set] of Object.entries(b._contractsByPeriod || {})) {
-      if (set.size > 1) {
-        conflicts.push({ period: periodKey, values: [...set].sort() });
-      }
+    bp.경부하합 += num(r[m.lightReading]);
+    bp.중부하합 += num(r[m.midReading]);
+    bp.최대부하합 += num(r[m.peakReading]);
+    bp.최대수요중부하합 += num(r[m.maxMidReading]);
+    bp.최대수요최대부하합 += num(r[m.maxPeakReading]);
+
+    // V6 레거시 호환 — custNo 1개 대표 레코드 유지 (첫 기간 기준)
+    if (!byCust[cust]) {
+      byCust[cust] = bp;
     }
-    if (conflicts.length > 0) b._contractConflicts = conflicts;
-    delete b._units;
-    delete b._contractsByPeriod;
   }
-  return by;
+
+  // V5 #34 — 같은 기간에 계약전력 상이 플래그
+  for (const k in byPeriod) {
+    const bp = byPeriod[k];
+    if (bp._contractSet.size > 1) {
+      bp._contractConflicts = [{ period: `${bp.사용시작} ~ ${bp.사용끝}`, values: [...bp._contractSet].sort() }];
+    }
+    delete bp._units;
+    delete bp._contractSet;
+  }
+
+  return { byPeriod, byCust };
 }
 
 function extractMeterMonths(rows, m) {
@@ -1789,10 +1824,15 @@ function fmtCmp(label1, v1, label2, v2, unit) {
   return `${label1} ${fmt(v1)}${u} / ${label2} ${fmt(v2)}${u} / 차이 ${sign}${fmt(d)}${u}`;
 }
 
-function validate(bills, meterByCust, prevBills) {
+// V6 — meterData 인자: { byPeriod, byCust } 형태 (신규) 또는 구 custNo 맵 (레거시)
+function validate(bills, meterData, prevBills) {
   const out = [];
   const prevByCust = {};
   if (prevBills) for (const p of prevBills) prevByCust[p.custNo] = p;
+
+  // V6 — 입력 형식 정규화 (구 버전은 byCust만 받아도 동작)
+  const byPeriod = (meterData && meterData.byPeriod) || {};
+  const byCust = (meterData && meterData.byCust) || meterData || {};
 
   // 중복 청구 감지
   const billsByCust = {};
@@ -2094,14 +2134,40 @@ function validate(bills, meterByCust, prevBills) {
       });
     }
 
-    // ═════ B. 교차검증 (관제) — V5 재설계 ═════
-    // - B11: 관제 내 계약전력 상이 (같은 기간) #34
-    // - B12: 한전 vs 관제 계약전력 불일치
-    // - B13: 지침 매핑 수정 (경부하=경+심야 / 중부하=중+저녁 / 최대부하=최+주간)
-    // - B14: 총사용량 — 한전 > 관제 10% 초과만 이슈, 반대는 녹색 체크
-    // - C16: 정격용량합 > 계약전력 → info 강등 (상이 표기만)
-    // - C17: 최대수요전력 과다/과소
-    const m = meterByCust[b.custNo];
+    // ═════ B. 교차검증 (관제) — V6 사용기간 기반 매칭 ═════
+    // V6 핵심: 빌 사용시작/사용끝으로 관제 행 정확히 매칭
+    //         매칭 실패 시 → 고객번호 fallback → 여전히 없으면 안내 태그
+    let m = null;
+    let matchedBy = 'none';
+    const bPeriodKey = `${b.custNo}|${normalizeDate(b.사용시작)}|${normalizeDate(b.사용끝)}`;
+    if (byPeriod[bPeriodKey]) {
+      m = byPeriod[bPeriodKey];
+      matchedBy = 'period';
+    } else if (byCust[b.custNo]) {
+      m = byCust[b.custNo];
+      matchedBy = 'cust-fallback';
+    }
+
+    if (!m && byCust[b.custNo] === undefined) {
+      // 관제 데이터 자체에 이 고객번호 없음 — B15 info 표기
+      if (Object.keys(byPeriod).length > 0 || Object.keys(byCust).length > 0) {
+        issues.push({
+          code: 'B15', level: 'info', cat: 'usage', col: '관제매칭',
+          reason: `관제 데이터에 해당 고객번호 없음 (사용기간 ${normalizeDate(b.사용시작)} ~ ${normalizeDate(b.사용끝)})`,
+          detail: '관제 CSV에 이 고객번호가 없어 사용량 교차검증 불가',
+          tag: 'orange',
+        });
+      }
+    } else if (matchedBy === 'cust-fallback') {
+      // 기간은 안 맞지만 같은 고객번호 있음 — B16 info 표기
+      issues.push({
+        code: 'B16', level: 'info', cat: 'usage', col: '관제매칭',
+        reason: `관제 사용기간 불일치 (빌: ${normalizeDate(b.사용시작)} ~ ${normalizeDate(b.사용끝)} / 관제: ${m.사용시작 || '?'} ~ ${m.사용끝 || '?'})`,
+        detail: '빌코리아 사용기간과 일치하는 관제 행이 없어 고객번호로만 대체 매칭함 — 사용량 수치 신뢰 낮음',
+        tag: 'orange',
+      });
+    }
+
     if (m) {
       const cType = chargerType(m);
       const skipUsage = shouldSkipUsageCheck(m);
@@ -2350,7 +2416,7 @@ function applyMeterMonth(yyyymm) {
   if (!meterRawRows) return;
   currentMeterMonth = yyyymm;
   meterData = aggregateMeter(meterRawRows.rows, meterRawRows.colMap, yyyymm);
-  const custCount = Object.keys(meterData).length;
+  const custCount = Object.keys(meterData.byCust || {}).length;
   const options = meterRawRows.months.map(ym =>
     `<option value="${ym}" ${ym === currentMeterMonth ? 'selected' : ''}>${ym.substring(0,4)}년 ${ym.substring(4,6)}월</option>`
   ).join('');
@@ -2760,7 +2826,10 @@ async function handleBatch(event, type) {
         const filtered = parsed.rows.filter(r => extractYyyymm(r[colMap.yyyymm]) === ym);
         const agg = aggregateMeter(filtered, colMap, ym);
         await db.meters.where('yyyymm').equals(ym).delete();
-        const records = Object.values(agg).map(m => ({ ...m, yyyymm: ym }));
+        // V6 — byPeriod 레코드를 저장 (사용기간별로 정확한 단위)
+        // 단, Dexie 키는 [yyyymm+custNo]라 custNo 중복 시 마지막만 남음 (레거시 호환)
+        // 관제 원본 행도 raw_meters 같은 테이블에 저장하면 좋지만, 현재 스키마 유지
+        const records = Object.values(agg.byCust || {}).map(m => ({ ...m, yyyymm: ym }));
         const CHUNK = 500;
         for (let i = 0; i < records.length; i += CHUNK) {
           await db.meters.bulkPut(records.slice(i, i + CHUNK));
@@ -2796,6 +2865,8 @@ async function runMonthValidation(yyyymm) {
     const meterRecs = await db.meters.where('yyyymm').equals(meterYm).toArray();
     const meterByCust = {};
     for (const m of meterRecs) meterByCust[m.custNo] = m;
+    // V6 — 레거시 저장 형식은 byPeriod가 없음. byCust로만 fallback 매칭
+    const meterInput = { byPeriod: {}, byCust: meterByCust };
 
     const prevYm = prevYyyymm(yyyymm);
     let prevBills = null;
@@ -2803,7 +2874,7 @@ async function runMonthValidation(yyyymm) {
       prevBills = await db.bills.where('yyyymm').equals(prevYm).toArray();
     }
 
-    validationResults = validate(bills, meterByCust, prevBills && prevBills.length ? prevBills : null);
+    validationResults = validate(bills, meterInput, prevBills && prevBills.length ? prevBills : null);
 
     // 해지/누락/신규 감지
     try {
@@ -2814,7 +2885,7 @@ async function runMonthValidation(yyyymm) {
     } catch (err) { console.warn('missing detect:', err); }
 
     billData = bills;
-    meterData = meterByCust;
+    meterData = meterInput; // V6 — { byPeriod: {}, byCust } 형식
 
     const crit = validationResults.filter(r => r.issues.some(i => i.level === 'critical')).length;
     const warn = validationResults.filter(r => r.issues.some(i => i.level === 'warning')).length;
@@ -3334,7 +3405,7 @@ async function exportExcel(filterCat) {
     metaSheet.addRow(['검증 일시', new Date().toLocaleString('ko-KR')]);
     metaSheet.addRow(['청구월', inferBillMonth(billData)]);
     metaSheet.addRow(['총 청구건', billData.length]);
-    metaSheet.addRow(['관제 고객수', Object.keys(meterData || {}).length]);
+    metaSheet.addRow(['관제 고객수', Object.keys((meterData && meterData.byCust) || meterData || {}).length]);
     metaSheet.addRow(['치명적 이슈', critCount + '건']);
     metaSheet.addRow(['주의 이슈', warnCount + '건']);
     metaSheet.addRow(['잠재 환급액', totalRefund]);
