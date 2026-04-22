@@ -670,6 +670,16 @@ let currentView = 'dashboard';
 const $ = (s) => document.querySelector(s);
 const fmt = (n) => (n == null || isNaN(n)) ? '—' : Math.round(n).toLocaleString('ko-KR');
 const fmtMoney = (n) => n == null ? '—' : '₩' + fmt(n);
+// V3 — 억/만 단축 표기 (#19 대시보드)
+const fmtMoneyShort = (n) => {
+  if (n == null || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 100000000) return sign + (abs / 100000000).toFixed(1) + '억';
+  if (abs >= 10000000) return sign + Math.round(abs / 10000) + '만';
+  if (abs >= 10000) return sign + (abs / 10000).toFixed(1) + '만';
+  return sign + fmt(abs) + '원';
+};
 const toast = (msg, type) => {
   const t = $('#toast');
   t.textContent = msg;
