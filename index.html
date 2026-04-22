@@ -906,8 +906,8 @@ async function renderDashboard() {
   $('#ds-crit-sub').textContent = issueMonths.length > 0 ? `${issueMonths.length}개월 누계` : '검증 대기중';
   $('#ds-refund-sub').textContent = issueMonths.length > 0 ? `${issueMonths.length}개월 누계` : '검증 대기중';
 
-  // ═ 월별 데이터 테이블 (배치 업로드 시 이 섹션 사용) ═
-  renderMonthsTable(months);
+  // ═ 누적 월별 데이터 테이블은 기간 필터 무시 — 항상 전체 표시 (데이터 관리 패널) ═
+  renderMonthsTable(allMonths);
 }
 
 function renderMonthsTable(months) {
