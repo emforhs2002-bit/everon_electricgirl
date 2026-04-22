@@ -295,7 +295,7 @@
   <div class="topbar">
     <div class="topbar-left">
       <div class="everon-logo-img topbar-logo-img" onclick="navigate('dashboard')" title="대시보드로 이동" aria-label="에버온 홈"></div>
-      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V3</span></div>
+      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V4</span></div>
     </div>
     <div class="topbar-right">
       <span class="topbar-user" id="topbarUser">everon</span>
@@ -356,7 +356,7 @@
         <div class="dash-grid">
           <div class="stat-card"><div class="stat-label">치명적 이슈 (누계)</div><div class="stat-value danger" id="ds-crit">0</div><div class="stat-sub" id="ds-crit-sub">과소청구 · 계산오류</div></div>
           <div class="stat-card"><div class="stat-label">주의 이슈 (누계)</div><div class="stat-value warn" id="ds-warn">0</div><div class="stat-sub">불일치 · 변동</div></div>
-          <div class="stat-card"><div class="stat-label">잠재 환급액 (누계)</div><div class="stat-value blue" id="ds-refund">₩0</div><div class="stat-sub" id="ds-refund-sub">치명 이슈 합산</div></div>
+          <div class="stat-card"><div class="stat-label">잠재 환급액 (연 환산)</div><div class="stat-value blue" id="ds-refund">₩0</div><div class="stat-sub" id="ds-refund-sub">조회 기간 기준 연 환산</div></div>
           <div class="stat-card"><div class="stat-label">검증 완료 월수</div><div class="stat-value" id="ds-months">0</div><div class="stat-sub" id="ds-months-sub">기간 내</div></div>
         </div>
 
@@ -601,11 +601,13 @@ const DEFAULT_SETTINGS = {
   fuelAdjust: 5.0,
   vatRate: 10.0,
   fundRates: JSON.parse(JSON.stringify(DEFAULT_FUND_RATES)),
-  amountTol: 10,
+  amountTol: 100,         // V4 — 금액 최소 오차 허용 (원) — 퍼센트랑 max로 비교
+  amountTolPct: 10,       // V4 — 금액 오차 허용 % (max(100, 계산값*10%))
   acSlow: 3.0,    // 완속 (AC→AC) 손실 허용 %
   acFast: 10.0,   // 급속 (AC→DC) 손실 허용 %
   slowThreshold: 11.0,  // 정격용량 kW: 이하=완속, 초과=급속
-  excessTol: 1.0,
+  skipUsageKw: 30.0,      // V4 — 정격용량 평균 ≥ 이 값이면 사용량 교차검증 전체 스킵 (#24)
+  excessPct: 10,          // V4 — 요금적용전력 > 계약전력 × (1+10%) 시 이슈 (#30)
   capTol: 3.0,
   monthlyChange: 50.0,
   mapNight: '심야', mapMid: '주간', mapPeak: '저녁',
@@ -637,6 +639,21 @@ function chargerType(m) {
   if (!m || !m.충전기수) return '미상';
   const avg = m.정격용량합 / m.충전기수;
   return avg <= settings.slowThreshold ? '완속' : '급속';
+}
+
+// V4 — 금액 오차 허용 (원) = max(최소허용원, 기댓값 × 허용%)  #23,26
+function amtTol(expected) {
+  const pct = (settings.amountTolPct || 10) / 100;
+  const floor = settings.amountTol || 100;
+  return Math.max(floor, Math.abs(expected) * pct);
+}
+
+// V4 — 사용량 교차검증 스킵 판정 (#24)
+// 급속(중/급속 충전기 = 정격용량 평균이 임계 이상)이면 해당 고객번호 전체 스킵
+function shouldSkipUsageCheck(m) {
+  if (!m || !m.충전기수 || m.충전기수 === 0) return false;
+  const avg = m.정격용량합 / m.충전기수;
+  return avg >= (settings.skipUsageKw || 30);
 }
 
 // IndexedDB (V3 스키마 — 검증결과 지속성 추가)
@@ -898,13 +915,28 @@ async function renderDashboard() {
     const s = v.summary || {};
     totalCrit += s.crit || 0;
     totalWarn += s.warn || 0;
-    totalRefund += s.totalDiff || 0;
+    // V4 #29 — 환급액은 한전 > 정상인 경우(diff > 0)만 합산
+    // summary.totalDiff는 레거시(절대값 합)라 재계산 — validations 데이터에서 직접 추출
+    const issuesList = v.issues || [];
+    for (const r of issuesList) {
+      for (const iss of (r.issues || [])) {
+        if (iss.level === 'critical' && typeof iss.diff === 'number' && iss.diff > 0) {
+          totalRefund += iss.diff;
+        }
+      }
+    }
   }
+  // V4 #29 — 연 환산: 조회 기간 N개월 → × (12 / N)
+  const periodMonths = Math.max(1, issueMonths.length);
+  const annualRefund = totalRefund * (12 / periodMonths);
+
   $('#ds-crit').textContent = fmt(totalCrit) + '건';
   $('#ds-warn').textContent = fmt(totalWarn) + '건';
-  $('#ds-refund').textContent = fmtMoneyShort(totalRefund);
+  $('#ds-refund').textContent = fmtMoneyShort(annualRefund);
   $('#ds-crit-sub').textContent = issueMonths.length > 0 ? `${issueMonths.length}개월 누계` : '검증 대기중';
-  $('#ds-refund-sub').textContent = issueMonths.length > 0 ? `${issueMonths.length}개월 누계` : '검증 대기중';
+  $('#ds-refund-sub').textContent = issueMonths.length > 0
+    ? `조회 ${periodMonths}개월 · 발견 ${fmtMoneyShort(totalRefund)} → 연 환산 (×${(12/periodMonths).toFixed(1)})`
+    : '검증 대기중';
 
   // ═ 누적 월별 데이터 테이블은 기간 필터 무시 — 항상 전체 표시 (데이터 관리 패널) ═
   renderMonthsTable(allMonths);
@@ -1289,8 +1321,14 @@ function exportRefundCSV(type) {
     }
     filename = `환급_고객별_${r.lo}_${r.hi}.csv`;
   }
-  const csv = rows.map(row => row.map(v => {
+  // V4 #21 — 고객번호 컬럼은 ="..." 형태로 텍스트 강제
+  // byCode 타입은 첫 컬럼이 "코드"라 텍스트 강제 불필요, byCust 타입은 첫 컬럼이 "고객번호"
+  const custColIdx = type === 'byCust' ? 0 : -1;
+  const csv = rows.map((row, rowIdx) => row.map((v, colIdx) => {
     const s = String(v == null ? '' : v);
+    if (rowIdx > 0 && colIdx === custColIdx && s.length > 0) {
+      return `="${s.replace(/"/g, '""')}"`;
+    }
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }).join(',')).join('\n');
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
@@ -1651,17 +1689,18 @@ function validate(bills, meterByCust, prevBills) {
     calcs.사용량_계산 = timeSum;
     calcs.사용량_식 = '심야+주간+저녁+경부하+중부하+최대부하';
 
-    // ═════ A1: 시간대합 = 총 사용량 (#20) ═════
+    // ═════ A1: 시간대합 = 총 사용량 (#20 V4 쉬운 메시지) ═════
     if (timeSum > 0 && Math.abs(timeSum - b.사용량) > 1) {
+      const diff = timeSum - b.사용량;
       issues.push({
         code: 'A1', level: 'critical', cat: 'money', col: '사용량',
-        reason: '시간대별 사용량 합이 총 사용량과 안 맞아',
-        detail: fmtCmp('한전 사용량', b.사용량, '시간대 합', timeSum, 'kWh'),
-        diff: timeSum - b.사용량,
+        reason: `시간대 합 ≠ 총사용량 (한전: ${fmt(b.사용량)} / 합: ${fmt(timeSum)} / 차: ${diff >= 0 ? '+' : ''}${fmt(diff)}kWh)`,
+        detail: '심야+주간+저녁+경부하+중부하+최대부하 합이 총사용량과 달라',
+        diff,
       });
     }
 
-    // ═════ A2: 기본요금 = 단가 × 전력 (#11 재정비) ═════
+    // ═════ A2: 기본요금 = 단가 × 전력 (#11 재정비 + V4 10% 허용) ═════
     if (b.기본요금단가 > 0) {
       const days = calcBillDays(b.사용시작, b.사용끝);
       const isProrated = days > 0 && days < 28;
@@ -1675,102 +1714,106 @@ function validate(bills, meterByCust, prevBills) {
       calcs.기본요금_식 = `${fmt(b.기본요금단가)} × ${ePow}kW${isProrated ? ` × ${days}/30일` : ''}`;
 
       const diff = b.기본요금 - exp;
-      if (!isProrated) {
-        if (Math.abs(diff) > settings.amountTol) {
-          issues.push({
-            code: 'A2', level: 'critical', cat: 'money', col: '기본요금',
-            reason: `기본요금이 ${isLow ? '계약전력' : '요금적용전력'}×단가와 안 맞아`,
-            detail: fmtCmp('한전 기본요금', b.기본요금, '계산값', exp, '원'),
-            diff,
-          });
-        } else {
-          ok.기본요금 = true;
-        }
-      } else if (days > 0) {
-        if (Math.abs(diff) > Math.max(100, full * 0.1)) {
-          issues.push({
-            code: 'A2p', level: 'warning', cat: 'money', col: '기본요금',
-            reason: `일할계산(${days}일) 기본요금이 안 맞아`,
-            detail: fmtCmp('한전 기본요금', b.기본요금, '일할 계산', exp, '원'),
-            diff,
-          });
-        } else {
-          ok.기본요금 = true;
-        }
+      const tol = amtTol(exp);
+      if (Math.abs(diff) > tol) {
+        issues.push({
+          code: isProrated ? 'A2p' : 'A2',
+          level: 'critical', cat: 'money', col: '기본요금',
+          reason: isProrated
+            ? `일할계산(${days}일) 기본요금이 10% 넘게 차이 나`
+            : `기본요금 (한전: ${fmt(b.기본요금)} / 계산: ${fmt(exp)} / 차: ${diff >= 0 ? '+' : ''}${fmt(diff)})`,
+          detail: `${fmt(b.기본요금단가)}원 × ${ePow}kW${isProrated ? ` × ${days}/30일` : ''} = ${fmt(exp)}원 (10% 허용)`,
+          diff,
+        });
+      } else {
+        ok.기본요금 = true;
       }
     }
 
-    // ═════ A3: 기본요금 상한 ═════
+    // ═════ A3: 기본요금 상한 (V4 10% 허용) ═════
     if (b.기본요금단가 > 0 && b.계약전력 > 0 && b.요금적용전력 <= b.계약전력) {
       const cap = b.계약전력 * b.기본요금단가;
-      if (b.기본요금 > cap + settings.amountTol) {
+      const tol = amtTol(cap);
+      if (b.기본요금 > cap + tol) {
         issues.push({
           code: 'A3', level: 'critical', cat: 'money', col: '기본요금',
-          reason: '기본요금이 계약전력 상한을 넘었어',
-          detail: fmtCmp('한전 기본요금', b.기본요금, '상한', cap, '원'),
+          reason: `기본요금 상한 초과 (한전: ${fmt(b.기본요금)} / 상한: ${fmt(cap)} / 차: +${fmt(b.기본요금 - cap)})`,
+          detail: `계약전력 ${b.계약전력}kW × 단가 ${fmt(b.기본요금단가)}원 = 상한 ${fmt(cap)}원`,
           diff: b.기본요금 - cap,
         });
       }
     }
 
-    // ═════ A4: 초과요금 ═════
-    const over = b.요금적용전력 - b.계약전력;
-    if (over > settings.excessTol) {
-      if (b.초과요금 > 0) {
+    // ═════ A4: 요금적용전력 검증 (#30 V4 재작성) ═════
+    // - 요금적용전력 ≤ 0: 무시 (한전 미입력 가능성)
+    // - 요금적용전력 > 계약전력 × 1.1: 이슈 (주의)
+    // - 초과 아닌데 초과요금 청구됨: 치명
+    if (b.요금적용전력 > 0 && b.계약전력 > 0) {
+      const threshold = b.계약전력 * (1 + settings.excessPct / 100);
+      if (b.요금적용전력 > threshold) {
+        const overKw = b.요금적용전력 - b.계약전력;
+        const overPct = (overKw / b.계약전력 * 100).toFixed(0);
         issues.push({
           code: 'A4a', level: 'warning', cat: 'contract', col: '요금적용전력',
-          reason: '초과사용 중 — 초과요금 청구됨',
-          detail: `계약 ${b.계약전력}kW → 적용 ${b.요금적용전력}kW (+${over}kW) / 초과요금 ${fmt(b.초과요금)}원`,
+          reason: `요금적용전력 (계약: ${b.계약전력} / 적용: ${b.요금적용전력} / 차: +${overKw}kW, +${overPct}%)`,
+          detail: `요금적용전력이 계약전력 대비 ${settings.excessPct}% 이상 높아 — 계약 변경 검토 필요`,
+          diff: overKw,
+        });
+      } else if (b.요금적용전력 < b.계약전력 && b.초과요금 > 0) {
+        issues.push({
+          code: 'A4c', level: 'critical', cat: 'money', col: '초과요금',
+          reason: `초과요금 오청구 (한전: ${fmt(b.초과요금)} / 계산: 0 / 차: +${fmt(b.초과요금)})`,
+          detail: `요금적용전력 ${b.요금적용전력}kW ≤ 계약전력 ${b.계약전력}kW 인데 초과요금이 부과됨`,
           diff: b.초과요금,
         });
-      } else {
-        issues.push({
-          code: 'A4b', level: 'info', cat: 'contract', col: '요금적용전력',
-          reason: '초과사용 1차 예고 단계',
-          detail: `계약 ${b.계약전력}kW → 적용 ${b.요금적용전력}kW (+${over}kW)`,
-        });
       }
-    } else if (over < 0 && b.초과요금 > 0) {
-      issues.push({
-        code: 'A4c', level: 'critical', cat: 'money', col: '초과요금',
-        reason: '초과 안했는데 초과요금이 청구됐어',
-        detail: fmtCmp('한전 초과요금', b.초과요금, '계산', 0, '원'),
-        diff: b.초과요금,
-      });
     }
+    // 요금적용전력 ≤ 0 이면 검증 스킵 (한전 미입력)
 
-    // ═════ A5: 공급가액 ═════
-    if (b.전력량요금 > 0 || b.기후환경요금 > 0) {
-      const fuel = settings.fuelAdjust * b.사용량;
-      const exp = b.기본요금 + b.초과요금 + b.전력량요금 + b.기후환경요금 + fuel;
-      calcs.공급가액_한전 = b.공급가액;
-      calcs.공급가액_계산 = Math.round(exp);
-      calcs.공급가액_식 = `기본 + 초과 + 전력량 + 기후환경 + 연료비(${fmt(fuel)})`;
-      const diff = b.공급가액 - exp;
-      const tol = Math.max(settings.amountTol, b.사용량 * 0.3);
+    // ═════ A5: 전력량요금 교차검증 (V4 재설계) #23,27,28 ═════
+    // 진우 설명: 청구기간이 계절 걸치면 심/주/저 + 경/중/최 둘 다 값 있음
+    // → 6개 시간대 각각 (단가 × 사용량) 모두 합산 = 전력량요금
+    // 기후환경요금·연료비조정은 한전이 틀리지 않으므로 검증 제외
+    const energyCalc =
+      (b.심야단가 * b.심야사용량) +
+      (b.주간단가 * b.주간사용량) +
+      (b.저녁단가 * b.저녁사용량) +
+      (b.경부하단가 * b.경부하사용량) +
+      (b.중부하단가 * b.중부하사용량) +
+      (b.최대부하단가 * b.최대부하사용량);
+
+    if (b.전력량요금 > 0 && energyCalc > 0) {
+      const exp = Math.round(energyCalc);
+      calcs.전력량요금_한전 = b.전력량요금;
+      calcs.전력량요금_계산 = exp;
+      calcs.전력량요금_식 = '심야+주간+저녁+경+중+최 (단가×사용량 합)';
+      const diff = b.전력량요금 - exp;
+      const tol = amtTol(exp);
       if (Math.abs(diff) > tol) {
         issues.push({
-          code: 'A5', level: 'critical', cat: 'money', col: '공급가액',
-          reason: '공급가액이 구성요소 합과 안 맞아',
-          detail: fmtCmp('한전 공급가액', b.공급가액, '계산', Math.round(exp), '원'),
+          code: 'A5', level: 'critical', cat: 'money', col: '전력량요금',
+          reason: `전력량요금 (한전: ${fmt(b.전력량요금)} / 계산: ${fmt(exp)} / 차: ${diff >= 0 ? '+' : ''}${fmt(diff)})`,
+          detail: `(심야×단가 + 주간×단가 + 저녁×단가 + 경부하×단가 + 중부하×단가 + 최대부하×단가) = ${fmt(exp)}원 (10% 허용)`,
           diff,
         });
       } else {
-        ok.공급가액 = true;
+        ok.전력량요금 = true;
       }
     }
+    // 공급가액 전체는 기후환경/연료비 때문에 검증하지 않음 (한전 신뢰)
 
-    // ═════ A6: 부가세 10% ═════
+    // ═════ A6: 부가세 10% (V4 허용치 재조정) ═════
     if (b.전기요금계 > 0) {
       const exp = Math.round(b.전기요금계 * settings.vatRate / 100);
       calcs.부가세_한전 = b.부가가치세;
       calcs.부가세_계산 = exp;
       calcs.부가세_식 = `전기요금계 × ${settings.vatRate}%`;
-      if (Math.abs(b.부가가치세 - exp) > settings.amountTol) {
+      const tol = amtTol(exp);
+      if (Math.abs(b.부가가치세 - exp) > tol) {
         issues.push({
           code: 'A6', level: 'warning', cat: 'money', col: '부가가치세',
-          reason: `부가세 ${settings.vatRate}% 계산이 안 맞아`,
-          detail: fmtCmp('한전 부가세', b.부가가치세, '계산', exp, '원'),
+          reason: `부가세 (한전: ${fmt(b.부가가치세)} / 계산: ${fmt(exp)} / 차: ${b.부가가치세 - exp >= 0 ? '+' : ''}${fmt(b.부가가치세 - exp)})`,
+          detail: `전기요금계 ${fmt(b.전기요금계)}원 × ${settings.vatRate}% = ${fmt(exp)}원 (10% 허용)`,
           diff: b.부가가치세 - exp,
         });
       } else {
@@ -1778,18 +1821,19 @@ function validate(bills, meterByCust, prevBills) {
       }
     }
 
-    // ═════ A7: 전력기금 (#16 기간별 요율) ═════
+    // ═════ A7: 전력기금 (#16 기간별 요율 + V4 10% 허용) ═════
     if (b.전기요금계 > 0) {
       const rate = getFundRate(b.billYyyymm);
       const exp = Math.floor(b.전기요금계 * rate / 100 / 10) * 10;
       calcs.전력기금_한전 = b.전력기금;
       calcs.전력기금_계산 = exp;
       calcs.전력기금_식 = `전기요금계 × ${rate}% (${b.billYyyymm} 기준)`;
-      if (Math.abs(b.전력기금 - exp) > 10) {
+      const tol = amtTol(exp);
+      if (Math.abs(b.전력기금 - exp) > tol) {
         issues.push({
           code: 'A7', level: 'warning', cat: 'money', col: '전력기금',
-          reason: `전력기금 ${rate}% 계산이 안 맞아 (기간별 요율 기준)`,
-          detail: fmtCmp('한전 전력기금', b.전력기금, '계산', exp, '원'),
+          reason: `전력기금 (한전: ${fmt(b.전력기금)} / 계산: ${fmt(exp)} / 차: ${b.전력기금 - exp >= 0 ? '+' : ''}${fmt(b.전력기금 - exp)})`,
+          detail: `전기요금계 × ${rate}% (${b.billYyyymm} 기준 요율) = ${fmt(exp)}원, 10원 절사 (10% 허용)`,
           diff: b.전력기금 - exp,
         });
       } else {
@@ -1797,20 +1841,23 @@ function validate(bills, meterByCust, prevBills) {
       }
     }
 
-    // ═════ A8: 청구요금 합산 ═════
+    // ═════ A8: 청구요금 합산 (V4 10% 허용) ═════
     const expC = b.전기요금계 + b.부가가치세 + b.전력기금 + b.원단위절사 +
       b.전월연체료 + b.가산금 + b.익월정산액 + b.수금정산액;
     calcs.청구요금_한전 = b.청구요금;
     calcs.청구요금_계산 = Math.round(expC);
-    if (b.청구요금 > 0 && Math.abs(b.청구요금 - expC) > settings.amountTol) {
-      issues.push({
-        code: 'A8', level: 'warning', cat: 'money', col: '청구요금',
-        reason: '청구요금 최종 합산이 안 맞아',
-        detail: fmtCmp('한전 청구요금', b.청구요금, '합산', Math.round(expC), '원'),
-        diff: b.청구요금 - expC,
-      });
-    } else if (b.청구요금 > 0) {
-      ok.청구요금 = true;
+    if (b.청구요금 > 0) {
+      const tol = amtTol(expC);
+      if (Math.abs(b.청구요금 - expC) > tol) {
+        issues.push({
+          code: 'A8', level: 'warning', cat: 'money', col: '청구요금',
+          reason: `청구요금 합산 (한전: ${fmt(b.청구요금)} / 계산: ${fmt(Math.round(expC))} / 차: ${b.청구요금 - expC >= 0 ? '+' : ''}${fmt(b.청구요금 - expC)})`,
+          detail: `전기요금계+부가세+전력기금+절사+연체료+가산금+정산 = ${fmt(Math.round(expC))}원 (10% 허용)`,
+          diff: b.청구요금 - expC,
+        });
+      } else {
+        ok.청구요금 = true;
+      }
     }
 
     // ═════ A9: 시간대 전부 0 ═════
@@ -1852,29 +1899,39 @@ function validate(bills, meterByCust, prevBills) {
       });
     }
 
-    // ═════ B. 교차검증 (관제) — #22 AC 손실 완속/급속 ═════
+    // ═════ B. 교차검증 (관제) — #22 AC 손실 완속/급속 + #24 급속 전체 스킵 ═════
     const m = meterByCust[b.custNo];
     if (m) {
       const acTol = getAcTolerance(m);
       const cType = chargerType(m);
+      // V4 #24 — 급속(30kW 이상) 고객번호는 사용량 교차검증 전체 스킵
+      const skipUsage = shouldSkipUsageCheck(m);
 
-      // B12: 계약전력 불일치
+      // B12: 계약전력 불일치 (급속이어도 검증)
       if (m.계약전력 > 0 && b.계약전력 > 0 && m.계약전력 !== b.계약전력) {
         issues.push({
           code: 'B12', level: 'critical', cat: 'contract', col: '계약전력',
-          reason: '관제와 한전의 계약전력이 달라',
-          detail: fmtCmp('한전', b.계약전력, '관제', m.계약전력, 'kW'),
+          reason: `계약전력 불일치 (한전: ${b.계약전력} / 관제: ${m.계약전력} / 차: ${b.계약전력 - m.계약전력 >= 0 ? '+' : ''}${b.계약전력 - m.계약전력}kW)`,
+          detail: '한전 청구서와 관제 시스템의 계약전력이 달라',
           diff: b.계약전력 - m.계약전력,
         });
       } else if (m.계약전력 > 0 && b.계약전력 > 0) {
         ok.계약전력 = true;
       }
 
+      // V4 #24 — 급속이면 여기서 사용량 검증 스킵
+      if (skipUsage) {
+        calcs.총사용량_한전 = b.사용량;
+        calcs.총사용량_관제 = m.경부하합 + m.중부하합 + m.최대부하합;
+        calcs.충전기종류 = cType + ' (검증제외)';
+        calcs.AC허용치 = '—';
+        ok.사용량검증제외 = true;  // 엑셀에 "검증 제외" 태그
+      } else {
+
       // B13: 시간대별 교차 (저압 심/주/저 + 고압 경/중/최 통합)
       const kepcoLight = b.경부하사용량 + (settings.mapNight === '경부하' ? b.심야사용량 : 0);
       const kepcoMid = b.중부하사용량 + (settings.mapMid === '중부하' ? b.주간사용량 : 0);
       const kepcoPeak = b.최대부하사용량 + (settings.mapPeak === '최대부하' ? b.저녁사용량 : 0);
-      // 기본 매핑 fallback (심야→경부하, 주간→중부하, 저녁→최대부하)
       const checks = [
         { name: '경부하', bill: kepcoLight || b.심야사용량, meter: m.경부하합 },
         { name: '중부하', bill: kepcoMid || b.주간사용량, meter: m.중부하합 },
@@ -1889,23 +1946,23 @@ function validate(bills, meterByCust, prevBills) {
         if (diff > c.bill * 0.02) {
           issues.push({
             code: 'B13a', level: 'critical', cat: 'usage', col: `${c.name}사용량`,
-            reason: `🚨 ${c.name}: 관제가 한전보다 많음 — 한전 과소청구 의심`,
-            detail: fmtCmp('한전', c.bill, '관제', c.meter, 'kWh'),
+            reason: `${c.name} 과소청구 의심 (한전: ${fmt(c.bill)} / 관제: ${fmt(c.meter)} / 차: +${fmt(diff)}kWh)`,
+            detail: `관제(충전기)가 한전보다 ${fmt(diff)}kWh 더 많음 — 한전이 덜 청구한 것으로 의심`,
             diff,
           });
           bandIssueCount++;
         } else if (-pct > acTol) {
           issues.push({
             code: 'B13b', level: 'warning', cat: 'usage', col: `${c.name}사용량`,
-            reason: `${c.name}: 손실률이 ${cType} 허용치(${acTol}%)를 넘어`,
-            detail: fmtCmp('한전', c.bill, '관제', c.meter, 'kWh') + ` / 손실 ${Math.abs(pct).toFixed(1)}%`,
+            reason: `${c.name} 손실 초과 (한전: ${fmt(c.bill)} / 관제: ${fmt(c.meter)} / 차: ${fmt(diff)}kWh, 손실 ${Math.abs(pct).toFixed(1)}%)`,
+            detail: `${cType} 허용치 ${acTol}% 초과`,
             diff,
           });
           bandIssueCount++;
         }
       }
       if (bandIssueCount === 0 && (m.경부하합 + m.중부하합 + m.최대부하합) > 0) {
-        ok.시간대교차 = true; // #10 회색 [체크]
+        ok.시간대교차 = true;
       }
 
       // B14: 총량 교차
@@ -1920,49 +1977,50 @@ function validate(bills, meterByCust, prevBills) {
         if (diff > b.사용량 * 0.02) {
           issues.push({
             code: 'B14a', level: 'critical', cat: 'usage', col: '총사용량',
-            reason: `🚨 총사용량: 관제가 한전보다 많음 — 과소청구 의심`,
-            detail: fmtCmp('한전', b.사용량, '관제', mTotal, 'kWh'),
+            reason: `총사용량 과소청구 의심 (한전: ${fmt(b.사용량)} / 관제: ${fmt(mTotal)} / 차: +${fmt(diff)}kWh)`,
+            detail: `관제(충전기)가 한전보다 ${fmt(diff)}kWh 더 많음`,
             diff,
           });
         } else if (-pct > acTol) {
           issues.push({
             code: 'B14b', level: 'warning', cat: 'usage', col: '총사용량',
-            reason: `총사용량: 손실률이 ${cType} 허용치(${acTol}%)를 넘어`,
-            detail: fmtCmp('한전', b.사용량, '관제', mTotal, 'kWh') + ` / 손실 ${Math.abs(pct).toFixed(1)}%`,
+            reason: `총사용량 손실 초과 (한전: ${fmt(b.사용량)} / 관제: ${fmt(mTotal)} / 차: ${fmt(diff)}kWh, 손실 ${Math.abs(pct).toFixed(1)}%)`,
+            detail: `${cType} 허용치 ${acTol}% 초과`,
             diff,
           });
         } else {
-          ok.총사용량 = true; // 한전 > 관제, 허용치 이내 — #10
+          ok.총사용량 = true;
         }
       }
 
-      // C16: 정격용량합 vs 계약전력
+      // C16: 정격용량합 vs 계약전력 (급속이 아닐 때만)
       if (m.정격용량합 > 0 && b.계약전력 > 0) {
         const diff = m.정격용량합 - b.계약전력;
         if (diff > settings.capTol) {
           issues.push({
             code: 'C16', level: 'critical', cat: 'contract', col: '계약전력',
-            reason: `🔌 충전기 정격용량 합이 계약전력을 초과`,
-            detail: fmtCmp('계약전력', b.계약전력, '정격용량합', m.정격용량합, 'kW') + ` / 충전기 ${m.충전기수}대 (${cType})`,
+            reason: `정격용량 초과 (계약: ${b.계약전력} / 정격합: ${m.정격용량합} / 차: +${fmt(diff)}kW)`,
+            detail: `충전기 ${m.충전기수}대 (${cType}) 정격용량 합이 계약전력 초과`,
             diff,
           });
         }
       }
+      } // if (!skipUsage) 끝
 
-      // C17: 최대수요전력 / 계약전력
+      // C17: 최대수요전력 / 계약전력 — 급속 무관 (이건 계약 적정성이라 계속 검증)
       if (b.최대수요전력 > 0 && b.계약전력 > 0) {
         const util = b.최대수요전력 / b.계약전력 * 100;
         if (util < 30) {
           issues.push({
             code: 'C17a', level: 'info', cat: 'contract', col: '계약전력',
-            reason: '최대수요가 계약의 30% 미만 — 계약 과다 의심',
-            detail: `최대수요 ${b.최대수요전력}kW / 계약 ${b.계약전력}kW = ${util.toFixed(0)}%`,
+            reason: `계약 과다 의심 (최대수요: ${b.최대수요전력} / 계약: ${b.계약전력}kW, ${util.toFixed(0)}%)`,
+            detail: '최대수요가 계약의 30% 미만 — 계약 축소 검토',
           });
         } else if (util > 95) {
           issues.push({
             code: 'C17b', level: 'warning', cat: 'contract', col: '계약전력',
-            reason: '최대수요가 계약의 95% 초과 — 초과 리스크',
-            detail: `최대수요 ${b.최대수요전력}kW / 계약 ${b.계약전력}kW = ${util.toFixed(0)}%`,
+            reason: `초과 리스크 (최대수요: ${b.최대수요전력} / 계약: ${b.계약전력}kW, ${util.toFixed(0)}%)`,
+            detail: '최대수요가 계약의 95% 초과',
           });
         }
       }
@@ -2189,12 +2247,12 @@ async function runValidation() {
       try { await db.bills.bulkPut(billRecords); } catch (e) { console.warn(e); }
     }
 
-    // 실행 이력
+    // 실행 이력 — V4 #29 환급 기준: diff > 0 (한전이 더 청구한 건)만 합산
     const crit = validationResults.filter(r => r.issues.some(i => i.level === 'critical')).length;
     const warn = validationResults.filter(r => r.issues.some(i => i.level === 'warning')).length;
-    const totalDiff = validationResults
-      .filter(r => r.issues.some(i => i.level === 'critical'))
-      .reduce((s, r) => s + r.issues.filter(i => i.level === 'critical').reduce((a, i) => a + Math.abs(i.diff || 0), 0), 0);
+    const totalDiff = validationResults.reduce((s, r) =>
+      s + r.issues.filter(i => i.level === 'critical' && typeof i.diff === 'number' && i.diff > 0)
+                  .reduce((a, i) => a + i.diff, 0), 0);
     await db.runs.add({ runAt: new Date().toISOString(), yyyymm: billYm, total: billData.length, crit, warn, totalDiff });
 
     // #7 검증결과 지속성 — IndexedDB에 저장
@@ -2345,7 +2403,7 @@ function renderCategory(view) {
   $('#catBody').innerHTML = tbl;
 }
 
-// #6 카테고리별 CSV 다운로드
+// #6 카테고리별 CSV 다운로드 — V4 고객번호 텍스트 강제 (#21)
 function exportCategoryCSV() {
   if (!window._currentCatView) return;
   const catKey = window._currentCatView.replace('cat-', '');
@@ -2371,11 +2429,15 @@ function exportCategoryCSV() {
   }
   if (rows.length <= 1) { toast('내보낼 데이터가 없습니다', 'error'); return; }
 
-  const csv = rows.map(r => r.map(v => {
+  // V4 #21 — 고객번호 컬럼(index 2)은 ="..." 형태로 감싸서 텍스트 강제
+  const csv = rows.map((r, rowIdx) => r.map((v, colIdx) => {
     const s = String(v == null ? '' : v);
+    // 헤더(rowIdx==0) 제외, 고객번호 컬럼은 텍스트로 강제
+    if (rowIdx > 0 && colIdx === 2 && s.length > 0) {
+      return `="${s.replace(/"/g, '""')}"`;
+    }
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }).join(',')).join('\n');
-  // BOM 추가 (엑셀 한글 깨짐 방지)
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2549,9 +2611,10 @@ async function runMonthValidation(yyyymm) {
 
     const crit = validationResults.filter(r => r.issues.some(i => i.level === 'critical')).length;
     const warn = validationResults.filter(r => r.issues.some(i => i.level === 'warning')).length;
-    const totalDiff = validationResults
-      .filter(r => r.issues.some(i => i.level === 'critical'))
-      .reduce((s, r) => s + r.issues.filter(i => i.level === 'critical').reduce((a, i) => a + Math.abs(i.diff || 0), 0), 0);
+    // V4 #29 환급 기준: diff > 0 (한전이 더 청구한 건)만 합산
+    const totalDiff = validationResults.reduce((s, r) =>
+      s + r.issues.filter(i => i.level === 'critical' && typeof i.diff === 'number' && i.diff > 0)
+                  .reduce((a, i) => a + i.diff, 0), 0);
     await db.runs.add({ runAt: new Date().toISOString(), yyyymm, total: bills.length, crit, warn, totalDiff });
 
     // #7 검증결과 지속성
@@ -2668,6 +2731,23 @@ async function exportExcel() {
   if (!validationResults || validationResults.length === 0) {
     toast('검증 결과가 없습니다', 'error');
     return;
+  }
+  // V4 #25 — billData 비어있으면 validationResults에서 복원
+  if (!billData || billData.length === 0) {
+    billData = validationResults.map(r => r.bill).filter(b => b);
+    if (billData.length === 0) {
+      // 마지막 수단: IndexedDB 최근 월에서 로드
+      try {
+        const months = await db.months.orderBy('uploadedAt').reverse().limit(1).toArray();
+        if (months.length > 0) {
+          billData = await db.bills.where('yyyymm').equals(months[0].yyyymm).toArray();
+        }
+      } catch (e) { console.warn('bill 복원 실패', e); }
+    }
+    if (!billData || billData.length === 0) {
+      toast('청구서 데이터를 불러올 수 없습니다. 파일을 다시 업로드해주세요.', 'error');
+      return;
+    }
   }
   showProc('엑셀 생성 중...', 'V3 통합 리포트');
   await new Promise(r => setTimeout(r, 50));
@@ -2801,6 +2881,11 @@ async function exportExcel() {
 
       const rowObj = ws.addRow(row);
 
+      // V4 #21 — 고객번호 셀을 텍스트 포맷으로 강제 (과학표기법 방지)
+      const custCell = ws.getCell(rowIdx, 1);
+      custCell.numFmt = '@';  // Text format
+      if (b.custNo) custCell.value = String(b.custNo);
+
       // 행 전체에 레벨별 옅은 색 (치명>주의>info 순)
       const worstLevel = crit.length > 0 ? 'critical' : warn.length > 0 ? 'warning' : r.issues.length > 0 ? 'info' : null;
       if (worstLevel) {
@@ -2918,6 +3003,7 @@ async function exportExcel() {
         newRow.getCell('level').fill = fill(levelFill[iss.level]);
         newRow.getCell('level').font = { bold: true };
         newRow.getCell('code').fill = fill(cat.color);
+        newRow.getCell('cust').numFmt = '@';  // V4 #21 텍스트 강제
         newRow.alignment = { vertical: 'top', wrapText: true };
       }
       cs.autoFilter = { from: { row: 1, column: 1 }, to: { row: rows.length + 1, column: 9 } };
@@ -2961,6 +3047,7 @@ async function exportExcel() {
         });
         rr.getCell('level').fill = fill(levelFill[iss.level]);
         rr.getCell('cat').fill = fill(catFillMap[iss.cat] || COLORS.hdrDiff);
+        rr.getCell('cust').numFmt = '@';  // V4 #21 텍스트 강제
         sumRowCount++;
       }
     }
@@ -3051,7 +3138,7 @@ function fillSettings() {
   $('#set_acSlow').value = settings.acSlow;
   $('#set_acFast').value = settings.acFast;
   $('#set_slowThr').value = settings.slowThreshold;
-  $('#set_excess').value = settings.excessTol;
+  $('#set_excess').value = settings.excessPct != null ? settings.excessPct : 10;
   $('#set_capTol').value = settings.capTol;
   $('#set_monthly').value = settings.monthlyChange;
   $('#set_mapNight').value = settings.mapNight;
@@ -3075,11 +3162,13 @@ async function saveSettings() {
     fuelAdjust: +$('#set_fuel').value,
     vatRate: +$('#set_vat').value,
     fundRates,
-    amountTol: +$('#set_amtTol').value,
+    amountTol: +$('#set_amtTol').value || 100,
+    amountTolPct: DEFAULT_SETTINGS.amountTolPct,   // V4 — 10%
     acSlow: +$('#set_acSlow').value,
     acFast: +$('#set_acFast').value,
     slowThreshold: +$('#set_slowThr').value,
-    excessTol: +$('#set_excess').value,
+    skipUsageKw: DEFAULT_SETTINGS.skipUsageKw,     // V4 — 30kW
+    excessPct: DEFAULT_SETTINGS.excessPct,         // V4 — 10%
     capTol: +$('#set_capTol').value,
     monthlyChange: +$('#set_monthly').value,
     mapNight: $('#set_mapNight').value,
