@@ -623,6 +623,9 @@
   <div class="spinner"></div>
   <div class="processing-text" id="processingText">처리 중...</div>
   <div class="processing-sub" id="processingSub"></div>
+  <div id="processingBarWrap" style="display:none;width:min(420px,70%);background:#e5e7eb;border-radius:8px;height:10px;overflow:hidden;margin-top:6px;">
+    <div id="processingBar" style="background:linear-gradient(90deg,#16ACE3,#0ea5e9);height:100%;width:0%;transition:width 0.3s ease;"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -833,9 +836,18 @@ const toast = (msg, type) => {
   t.className = 'toast show' + (type ? ' ' + type : '');
   setTimeout(() => t.classList.remove('show'), 2500);
 };
-const showProc = (text, sub) => {
+const showProc = (text, sub, progress) => {
   $('#processingText').textContent = text || '처리 중...';
   $('#processingSub').textContent = sub || '';
+  // V9 — 진행률 표시 (0~100 숫자 전달 시)
+  const barWrap = $('#processingBarWrap');
+  const bar = $('#processingBar');
+  if (typeof progress === 'number' && progress >= 0 && progress <= 100) {
+    barWrap.style.display = 'block';
+    bar.style.width = progress + '%';
+  } else {
+    barWrap.style.display = 'none';
+  }
   $('#processing').classList.add('active');
 };
 const hideProc = () => $('#processing').classList.remove('active');
@@ -3308,9 +3320,9 @@ async function handleBatch(event, type) {
 }
 
 // 배치 업로드 후 특정 월 검증 실행
-async function runMonthValidation(yyyymm) {
-  showProc(`${yyyymm} 검증 중...`, '');
-  await new Promise(r => setTimeout(r, 100));
+async function runMonthValidation(yyyymm, silent) {
+  if (!silent) showProc(`${yyyymm} 검증 중...`, '');
+  if (!silent) await new Promise(r => setTimeout(r, 100));
   try {
     const bills = await db.bills.where('yyyymm').equals(yyyymm).toArray();
     const meterYm = billYmToMeterYm(yyyymm);
@@ -3368,15 +3380,65 @@ async function runMonthValidation(yyyymm) {
     } catch (e) { console.warn('validation save:', e); }
 
     sessionStorage.setItem('everon_last_ym', yyyymm);
-    updateBadges();
-    navigate('dashboard');
-    toast(`${yyyymm} 검증 완료: 치명 ${crit} · 주의 ${warn}`, 'success');
-    hideProc();
+    if (!silent) {
+      updateBadges();
+      navigate('dashboard');
+      toast(`${yyyymm} 검증 완료: 치명 ${crit} · 주의 ${warn}`, 'success');
+      hideProc();
+    }
+    return { yyyymm, crit, warn, total: bills.length };
   } catch (err) {
-    hideProc();
-    toast('실패: ' + err.message, 'error');
+    if (!silent) hideProc();
+    if (!silent) toast('실패: ' + err.message, 'error');
     console.error(err);
+    throw err;
   }
+}
+
+// V9 — 전체 월 일괄 재검증 (진행률 UI 포함)
+async function runAllValidations() {
+  const allMonths = await db.months.orderBy('yyyymm').toArray();
+  if (allMonths.length === 0) {
+    toast('재검증할 데이터가 없습니다', 'error');
+    return;
+  }
+  if (!confirm(`전체 ${allMonths.length}개월을 재검증합니다.\n시간이 걸릴 수 있어요. 계속할까요?`)) return;
+
+  const startTime = Date.now();
+  const results = [];
+  let totalCrit = 0, totalWarn = 0;
+
+  for (let i = 0; i < allMonths.length; i++) {
+    const m = allMonths[i];
+    const pct = Math.round(((i) / allMonths.length) * 100);
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    const remaining = i > 0 ? Math.round(elapsed / i * (allMonths.length - i)) : 0;
+    showProc(
+      `일괄 재검증 중 (${i + 1}/${allMonths.length})`,
+      `${m.yyyymm} 처리중 · 경과 ${elapsed}초${remaining > 0 ? ` · 남은시간 약 ${remaining}초` : ''}`,
+      pct
+    );
+    await new Promise(r => setTimeout(r, 30));
+    try {
+      const res = await runMonthValidation(m.yyyymm, true);
+      results.push(res);
+      totalCrit += res.crit;
+      totalWarn += res.warn;
+    } catch (e) {
+      console.warn(`${m.yyyymm} 실패:`, e);
+      results.push({ yyyymm: m.yyyymm, error: e.message });
+    }
+  }
+
+  hideProc();
+  updateBadges();
+  renderDashboard();
+  const totalSec = Math.round((Date.now() - startTime) / 1000);
+  const failed = results.filter(r => r.error).length;
+  toast(
+    `일괄 재검증 완료: ${allMonths.length}개월 · 치명 ${fmt(totalCrit)}건 · 주의 ${fmt(totalWarn)}건${failed > 0 ? ` · 실패 ${failed}개월` : ''} (${totalSec}초)`,
+    failed > 0 ? 'error' : 'success'
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
