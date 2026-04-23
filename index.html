@@ -289,12 +289,12 @@
   <div class="login-card">
     <div class="everon-logo-img login-logo-img" aria-label="에버온"></div>
     <div class="login-title">전기요금 검증 시스템</div>
-    <div class="login-sub">에버온 전략기획실 내부전용 · V12</div>
+    <div class="login-sub">에버온 전략기획실 내부전용 · V13</div>
     <div class="login-field"><label>아이디</label><input type="text" id="loginId" autocomplete="username"></div>
     <div class="login-field"><label>비밀번호</label><input type="password" id="loginPw" autocomplete="current-password" onkeydown="if(event.key==='Enter') tryLogin()"></div>
     <button class="login-btn" onclick="tryLogin()">로그인</button>
     <div class="login-err" id="loginErr"></div>
-    <div class="login-foot">© 에버온 전략기획실 · 내부 전용 · V12</div>
+    <div class="login-foot">© 에버온 전략기획실 · 내부 전용 · V13</div>
   </div>
 </div>
 
@@ -302,7 +302,7 @@
   <div class="topbar">
     <div class="topbar-left">
       <div class="everon-logo-img topbar-logo-img" onclick="navigate('dashboard')" title="대시보드로 이동" aria-label="에버온 홈"></div>
-      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V12</span></div>
+      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V13</span></div>
     </div>
     <div class="topbar-right">
       <span class="topbar-user" id="topbarUser">everon</span>
@@ -1088,6 +1088,8 @@ async function renderDashboard() {
       for (const r of results) {
         for (const iss of (r.issues || [])) {
           if (iss.level === 'critical' && typeof iss.diff === 'number' && iss.diff > 0 && iss.diff < 10000000 && REFUND_CODES.has(iss.code)) {
+            // V13 — A5는 신뢰도 높은 건만 차트 반영
+            if (iss.code === 'A5' && !iss.dashTrusted) continue;
             total += iss.diff;
           }
         }
@@ -1180,8 +1182,12 @@ async function renderDashboard() {
             cardBaseCnt++;
             cardBaseAmt += iss.diff;
           } else if (iss.code === 'A5') {
-            cardEnergyCnt++;
-            cardEnergyAmt += iss.diff;
+            // V13 — A5는 신뢰도 높은 건만 대시보드 집계 (dashTrusted)
+            // 나머지는 엑셀·탭에서 전체 확인 가능
+            if (iss.dashTrusted) {
+              cardEnergyCnt++;
+              cardEnergyAmt += iss.diff;
+            }
           }
         }
       }
@@ -2727,22 +2733,30 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
           const lightDiff = billLight - (m.경부하합 || 0);
           const midDiff = billMid - (m.중부하합 || 0);
           const peakDiff = billPeak - (m.최대부하합 || 0);
-          // 단가: 경/중간/최대부하 단가 (심야·주간·저녁 단가 사용 안 함)
-          const rLight = b.경부하단가 || 0;
-          const rMid = b.중부하단가 || 0;
-          const rPeak = b.최대부하단가 || 0;
+          // V13 — 단가 fallback: 비계절 달은 경부하단가=0이므로 심야단가 등으로 대체
+          const rLight = b.경부하단가 || b.심야단가 || 0;
+          const rMid   = b.중부하단가 || b.저녁단가 || 0;
+          const rPeak  = b.최대부하단가 || b.주간단가 || 0;
           // 양수 차이만 환급액 합산 (음수는 해당 묶음은 우리 이득이라 0)
           const refundLight = lightDiff > 0 ? lightDiff * rLight : 0;
           const refundMid   = midDiff > 0 ? midDiff * rMid : 0;
           const refundPeak  = peakDiff > 0 ? peakDiff * rPeak : 0;
           const totalRefund = Math.round(refundLight + refundMid + refundPeak);
 
+          // V13 — 대시보드 신뢰도 판단
+          // 한전/관제 비율 ≤ 1.15 AND 건당 환급 ≤ 15,000원 → 신뢰 O
+          // 그 외 → 전체 데이터엔 포함, 대시보드 집계엔 제외
+          const ratio = billTotal / meterTotal;
+          const dashTrusted = ratio <= 1.15 && totalRefund <= 15000;
+
           issues.push({
             code: 'A5', level: 'critical', cat: 'money', col: '사용량',
             reason: `사용량 과다청구 / 한전: ${fmt(billTotal)}kWh / 관제: ${fmt(meterTotal)}kWh / +${fmt(totalDiff)}kWh 더청구`,
-            detail: `환급 예상 = 경부하 ${fmt(Math.round(refundLight))}원 + 중부하 ${fmt(Math.round(refundMid))}원 + 최대부하 ${fmt(Math.round(refundPeak))}원 = ${fmt(totalRefund)}원 (한전이 관제보다 ${totalPct.toFixed(1)}% 많이 청구)`,
-            diff: totalRefund,  // V12 — diff는 원 단위 환급액
-            usageDiff: totalDiff,  // 참고: kWh 차이
+            detail: `환급 예상 = 경부하 ${fmt(Math.round(refundLight))}원 + 중부하 ${fmt(Math.round(refundMid))}원 + 최대부하 ${fmt(Math.round(refundPeak))}원 = ${fmt(totalRefund)}원 (한전이 관제보다 ${totalPct.toFixed(1)}% 많이 청구, 비율 ${ratio.toFixed(2)}배)`,
+            diff: totalRefund,          // V12 — diff는 원 단위 환급액
+            usageDiff: totalDiff,       // 참고: kWh 차이
+            ratio: ratio,               // V13 — 한전/관제 비율
+            dashTrusted: dashTrusted,   // V13 — 대시보드 집계 여부
           });
         } else if (totalDiff < 0) {
           ok.사용량 = true;  // 우리 이득
@@ -3048,11 +3062,13 @@ async function runValidation() {
     const crit = validationResults.filter(r => r.issues.some(i => i.level === 'critical')).length;
     const warn = validationResults.filter(r => r.issues.some(i => i.level === 'warning')).length;
     // V11 — 환급액은 A2/A2p/A3/A5 과다청구 + 가산금만 (kWh 이슈 제외)
+    // V13 — A5는 dashTrusted 만 누적 월별 환급액에 합산
     const REFUND_CODES = new Set(['A2', 'A2p', 'A3', 'A5']);
     let totalDiff = 0;
     for (const r of validationResults) {
       for (const i of r.issues) {
         if (i.level === 'critical' && typeof i.diff === 'number' && i.diff > 0 && i.diff < 10000000 && REFUND_CODES.has(i.code)) {
+          if (i.code === 'A5' && !i.dashTrusted) continue;  // V13
           totalDiff += i.diff;
         }
       }
@@ -3560,6 +3576,7 @@ async function runMonthValidation(yyyymm, silent) {
     for (const r of validationResults) {
       for (const i of r.issues) {
         if (i.level === 'critical' && typeof i.diff === 'number' && i.diff > 0 && i.diff < 10000000 && REFUND_CODES.has(i.code)) {
+          if (i.code === 'A5' && !i.dashTrusted) continue;  // V13
           totalDiff += i.diff;
         }
       }
