@@ -2744,10 +2744,10 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
           const totalRefund = Math.round(refundLight + refundMid + refundPeak);
 
           // V13 — 대시보드 신뢰도 판단
-          // 한전/관제 비율 ≤ 1.15 AND 건당 환급 ≤ 15,000원 → 신뢰 O
+          // 한전/관제 비율 ≤ 1.3 AND 건당 환급 ≤ 15,000원 → 신뢰 O
           // 그 외 → 전체 데이터엔 포함, 대시보드 집계엔 제외
           const ratio = billTotal / meterTotal;
-          const dashTrusted = ratio <= 1.15 && totalRefund <= 15000;
+          const dashTrusted = ratio <= 1.3 && totalRefund <= 15000;
 
           issues.push({
             code: 'A5', level: 'critical', cat: 'money', col: '사용량',
