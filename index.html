@@ -302,7 +302,7 @@
   <div class="topbar">
     <div class="topbar-left">
       <div class="everon-logo-img topbar-logo-img" onclick="navigate('dashboard')" title="대시보드로 이동" aria-label="에버온 홈"></div>
-      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V6</span></div>
+      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V7</span></div>
     </div>
     <div class="topbar-right">
       <span class="topbar-user" id="topbarUser">everon</span>
@@ -343,13 +343,16 @@
             <div class="page-title">대시보드</div>
             <div class="page-sub" id="dashSub">데이터를 업로드하면 검증 요약이 여기 표시됩니다.</div>
           </div>
-          <!-- #19 전역 기간 필터 -->
-          <div id="periodFilterBar" style="display:flex;gap:6px;align-items:center;background:var(--surface);padding:6px 10px;border-radius:var(--radius-md);border:1px solid var(--border);">
-            <span style="font-size:11px;color:var(--text-muted);font-weight:600;">기간:</span>
-            <button class="period-btn" data-range="3" onclick="setPeriodFilter(3)">최근 3개월</button>
-            <button class="period-btn active" data-range="6" onclick="setPeriodFilter(6)">최근 6개월</button>
-            <button class="period-btn" data-range="12" onclick="setPeriodFilter(12)">최근 12개월</button>
-            <button class="period-btn" data-range="0" onclick="setPeriodFilter(0)">전체</button>
+          <!-- V7 — 기간 드롭다운 (시작/끝 년월) -->
+          <div id="periodFilterBar" style="display:flex;gap:6px;align-items:center;background:var(--surface);padding:6px 10px;border-radius:var(--radius-md);border:1px solid var(--border);flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--text-muted);font-weight:600;">조회 기간:</span>
+            <select id="periodStartY" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;"></select>
+            <select id="periodStartM" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;"></select>
+            <span style="font-size:11px;color:var(--text-muted);">~</span>
+            <select id="periodEndY" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;"></select>
+            <select id="periodEndM" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;"></select>
+            <button class="btn btn-primary btn-sm" onclick="applyPeriodRange()" style="padding:4px 12px;">조회</button>
+            <button class="btn btn-outline btn-sm" onclick="setPeriodFilter(0)" style="padding:4px 10px;" title="전체 기간">전체</button>
           </div>
         </div>
 
@@ -359,12 +362,12 @@
           <div class="dash-hero-sub" id="heroSub">아직 데이터 없음</div>
         </div>
 
-        <!-- #19 억 단위 통계 카드 -->
+        <!-- V7 — 4개 카드: 기본요금 / 전력요금 / 환급예상 / 사용량비교 -->
         <div class="dash-grid">
-          <div class="stat-card"><div class="stat-label">치명적 이슈 (누계)</div><div class="stat-value danger" id="ds-crit">0</div><div class="stat-sub" id="ds-crit-sub">과소청구 · 계산오류</div></div>
-          <div class="stat-card"><div class="stat-label">주의 이슈 (누계)</div><div class="stat-value warn" id="ds-warn">0</div><div class="stat-sub">불일치 · 변동</div></div>
-          <div class="stat-card"><div class="stat-label">잠재 환급액 (연 환산)</div><div class="stat-value blue" id="ds-refund">₩0</div><div class="stat-sub" id="ds-refund-sub">조회 기간 기준 연 환산</div></div>
-          <div class="stat-card"><div class="stat-label">검증 완료 월수</div><div class="stat-value" id="ds-months">0</div><div class="stat-sub" id="ds-months-sub">기간 내</div></div>
+          <div class="stat-card"><div class="stat-label">기본요금 과다청구</div><div class="stat-value danger" id="ds-crit">0건</div><div class="stat-sub" id="ds-crit-sub">-</div></div>
+          <div class="stat-card"><div class="stat-label">전력요금 상이</div><div class="stat-value warn" id="ds-warn">0건</div><div class="stat-sub" id="ds-warn-sub">-</div></div>
+          <div class="stat-card"><div class="stat-label">환급 예상금 (연 환산)</div><div class="stat-value blue" id="ds-refund">₩0</div><div class="stat-sub" id="ds-refund-sub">조회 기간 기준</div></div>
+          <div class="stat-card"><div class="stat-label">사용량 (한전 / 관제)</div><div class="stat-value" id="ds-usage" style="font-size:22px;">—</div><div class="stat-sub" id="ds-usage-sub">급속 제외</div></div>
         </div>
 
         <div class="dash-row">
@@ -372,9 +375,9 @@
             <div class="card-head"><div class="card-title">월별 청구액 트렌드</div><span class="tag gray" id="trendRange">—</span></div>
             <div class="card-body"><div class="chart-box"><canvas id="chartTrend"></canvas></div></div>
           </div>
-          <!-- #19 월별 이슈 추이 (C안: 막대+라인 복합) -->
+          <!-- V7 — 월별 환급액 추이 -->
           <div class="card">
-            <div class="card-head"><div class="card-title">월별 이슈 추이</div><span class="tag gray">치명/주의/환급액</span></div>
+            <div class="card-head"><div class="card-title">월별 환급액 추이</div><span class="tag gray">기본요금 + 전력요금 과다</span></div>
             <div class="card-body"><div class="chart-box"><canvas id="chartIssueTrend"></canvas></div></div>
           </div>
         </div>
@@ -435,6 +438,9 @@
           <button class="filter-btn active critical" data-level="critical" onclick="toggleLevelFilter('critical')">치명</button>
           <button class="filter-btn active warning" data-level="warning" onclick="toggleLevelFilter('warning')">주의</button>
           <button class="filter-btn active info" data-level="info" onclick="toggleLevelFilter('info')">참고</button>
+          <span style="font-size:11px;color:var(--text-muted);font-weight:600;margin-left:10px;">코드:</span>
+          <button class="filter-btn" data-code="period" onclick="toggleCodeFilter('period')" title="B15/B16 관제 기간 불일치만">기간 불일치</button>
+          <button class="filter-btn" data-code="overcharge" onclick="toggleCodeFilter('overcharge')" title="A2/A5 과다청구만">과다청구</button>
           <span style="flex:1;"></span>
           <button class="filter-btn" onclick="clearCatFilters()" title="필터 초기화">↺ 초기화</button>
         </div>
@@ -487,6 +493,20 @@
 
         <!-- 고객별 상세 -->
         <div id="refundDetail"></div>
+
+        <!-- V7 — 환급 자동 요청 생성 (준비중) -->
+        <div class="card card-pad" style="margin-top: 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px dashed #f59e0b;">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div style="font-size:40px;">🤖</div>
+            <div style="flex:1;min-width:200px;">
+              <div style="font-size:16px;font-weight:700;color:#92400e;margin-bottom:4px;">환급 자동 요청 생성</div>
+              <div style="font-size:12px;color:#78350f;">찾아낸 과다청구 건을 한전에 자동으로 환급 신청 문서로 생성합니다.</div>
+            </div>
+            <button class="btn btn-primary" onclick="toast('준비 중입니다. 곧 공개될 예정이에요.', 'info')" style="background:#f59e0b;border-color:#f59e0b;">
+              🚀 환급 요청 생성 (준비중)
+            </button>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -864,38 +884,88 @@ function navigate(view) {
 let chartTrend = null, chartUtil = null;
 
 // V3 Phase 2 — 전역 기간 필터 상태 (#19)
-let periodRangeMonths = 6; // 기본 6개월, 0=전체
+let periodRangeMonths = 0; // V7 기본 전체 (드롭다운으로 조회)
 let chartIssueTrend = null;
 
+// V7 — 범위 기반 기간 필터 (YYYYMM 시작 ~ 끝)
+let periodRange = null; // {from: 'YYYYMM', to: 'YYYYMM'} 또는 null(전체)
+
 function setPeriodFilter(range) {
-  periodRangeMonths = range;
-  document.querySelectorAll('.period-btn').forEach(b => {
-    b.classList.toggle('active', +b.dataset.range === range);
-  });
+  // range=0 이면 전체, 그 외는 레거시 "최근 N개월"
+  if (range === 0) {
+    periodRange = null;
+  } else {
+    periodRangeMonths = range;
+    periodRange = null;
+  }
   renderDashboard();
 }
 
-// 기간 필터에 맞는 월 목록 (YYYYMM 배열) 반환
+// V7 — 드롭다운 조회 적용
+function applyPeriodRange() {
+  const sy = $('#periodStartY')?.value;
+  const sm = $('#periodStartM')?.value;
+  const ey = $('#periodEndY')?.value;
+  const em = $('#periodEndM')?.value;
+  if (!sy || !sm || !ey || !em) { toast('기간을 선택해주세요', 'error'); return; }
+  const from = sy + sm.padStart(2, '0');
+  const to = ey + em.padStart(2, '0');
+  if (from > to) { toast('시작 월이 끝 월보다 늦습니다', 'error'); return; }
+  periodRange = { from, to };
+  periodRangeMonths = 0;  // 레거시 필터 비활성
+  renderDashboard();
+}
+
+// V7 — 드롭다운 옵션 채우기
+function populatePeriodDropdowns(months) {
+  if (!months || months.length === 0) return;
+  const years = new Set();
+  for (const m of months) years.add(m.yyyymm.substring(0, 4));
+  const yrList = [...years].sort();
+  const monthList = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+  const fillSelect = (id, values, selected) => {
+    const el = $(id);
+    if (!el) return;
+    el.innerHTML = values.map(v => `<option value="${v}" ${v === selected ? 'selected' : ''}>${v}</option>`).join('');
+  };
+  const firstYm = months[0].yyyymm;
+  const lastYm = months[months.length - 1].yyyymm;
+  fillSelect('#periodStartY', yrList, firstYm.substring(0, 4));
+  fillSelect('#periodStartM', monthList, firstYm.substring(4, 6));
+  fillSelect('#periodEndY', yrList, lastYm.substring(0, 4));
+  fillSelect('#periodEndM', monthList, lastYm.substring(4, 6));
+}
+
+// V7 — 기간 필터에 맞는 월 목록
 function filterMonthsByPeriod(allMonths) {
+  if (periodRange) {
+    return allMonths.filter(m => m.yyyymm >= periodRange.from && m.yyyymm <= periodRange.to);
+  }
   if (!periodRangeMonths || periodRangeMonths === 0) return allMonths;
   return allMonths.slice(-periodRangeMonths);
 }
 
 async function renderDashboard() {
   const allMonths = await db.months.orderBy('yyyymm').toArray();
+  populatePeriodDropdowns(allMonths);  // V7 드롭다운 채우기
   const months = filterMonthsByPeriod(allMonths);
-  $('#ds-months').textContent = months.length + '개월';
-  $('#ds-months-sub').textContent = periodRangeMonths === 0
+  // V7 - ds-months는 제거되었지만 여전히 일부 UI에서 참조할 수 있음. 안전하게 체크.
+  if ($('#ds-months')) $('#ds-months').textContent = months.length + '개월';
+  if ($('#ds-months-sub')) $('#ds-months-sub').textContent = periodRangeMonths === 0
     ? (allMonths.length === 0 ? '데이터 없음' : '전체 기간')
     : `최근 ${periodRangeMonths}개월 중 ${months.length}개월 보유`;
 
-  // ═ Hero: 선택 기간 총 청구액 (억 단위) ═
+  // ═ Hero: 선택 기간 총 청구액 ═
   if (months.length > 0) {
     const totalAmount = months.reduce((s, m) => s + (m.totalAmount || 0), 0);
     const totalBills = months.reduce((s, m) => s + (m.billCount || 0), 0);
     $('#heroAmount').textContent = fmtMoneyShort(totalAmount);
-    $('#heroSub').textContent = `${months[0].yyyymm.substring(0,4)}.${months[0].yyyymm.substring(4,6)} ~ ${months[months.length-1].yyyymm.substring(0,4)}.${months[months.length-1].yyyymm.substring(4,6)} · 총 ${fmt(totalBills)}건`;
-    $('#dashSub').textContent = `${allMonths.length}개월 누적 · 필터: ${periodRangeMonths === 0 ? '전체' : '최근 ' + periodRangeMonths + '개월'}`;
+    // V7 — "2025.03 ~ 2026.02 조회 (연환산 ×1.0) · 5,123건"
+    const loYm = months[0].yyyymm, hiYm = months[months.length-1].yyyymm;
+    const n = months.length;
+    const annualMul = 12 / Math.max(1, n);
+    $('#heroSub').textContent = `${loYm.substring(0,4)}.${loYm.substring(4,6)} ~ ${hiYm.substring(0,4)}.${hiYm.substring(4,6)} 조회 (${n}개월, 연환산 ×${annualMul.toFixed(1)}) · 총 ${fmt(totalBills)}건`;
+    if ($('#dashSub')) $('#dashSub').textContent = `${allMonths.length}개월 누적`;
   } else {
     $('#heroAmount').textContent = '—';
     $('#heroSub').textContent = '데이터 없음';
@@ -931,7 +1001,7 @@ async function renderDashboard() {
     });
   }
 
-  // ═ 월별 이슈 추이 (C안: 막대+라인 복합) — #19 ═
+  // V7 — 월별 환급액 추이 (단순화)
   const allValidations = await db.validations.toArray();
   const validationsByYm = {};
   for (const v of allValidations) validationsByYm[v.yyyymm] = v;
@@ -939,43 +1009,39 @@ async function renderDashboard() {
 
   if (issueMonths.length > 0) {
     const labels = issueMonths.map(m => `${m.yyyymm.substring(2,4)}.${m.yyyymm.substring(4,6)}`);
-    const critCounts = [];
-    const warnCounts = [];
+    // V7 환급액 기준 재계산: A2/A2p/A3/A5 과다청구만
+    const REFUND_CODES = new Set(['A2', 'A2p', 'A3', 'A5']);
     const refundAmounts = [];
     for (const m of issueMonths) {
       const v = validationsByYm[m.yyyymm];
-      const s = v.summary || {};
-      critCounts.push(s.crit || 0);
-      warnCounts.push(s.warn || 0);
-      refundAmounts.push(s.totalDiff || 0);
+      const results = v.results || v.issues || [];
+      let total = 0;
+      for (const r of results) {
+        for (const iss of (r.issues || [])) {
+          if (iss.level === 'critical' && typeof iss.diff === 'number' && iss.diff > 0 && REFUND_CODES.has(iss.code)) {
+            total += iss.diff;
+          }
+        }
+      }
+      refundAmounts.push(total);
     }
     if (chartIssueTrend) chartIssueTrend.destroy();
     chartIssueTrend = new Chart($('#chartIssueTrend'), {
+      type: 'bar',
       data: {
         labels,
         datasets: [
-          { type: 'bar', label: '치명', data: critCounts, backgroundColor: 'rgba(220,38,38,0.85)', yAxisID: 'y', borderRadius: 4, order: 2 },
-          { type: 'bar', label: '주의', data: warnCounts, backgroundColor: 'rgba(251,191,36,0.85)', yAxisID: 'y', borderRadius: 4, order: 2 },
-          { type: 'line', label: '환급액', data: refundAmounts, borderColor: '#16ACE3', backgroundColor: 'rgba(22,172,227,0.1)', yAxisID: 'y1', tension: 0.3, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#16ACE3', fill: false, order: 1 },
+          { label: '환급 예상액', data: refundAmounts, backgroundColor: 'rgba(22,172,227,0.75)', borderRadius: 6 },
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 12 } },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                if (ctx.dataset.label === '환급액') return `환급액: ${fmtMoneyShort(ctx.parsed.y)}`;
-                return `${ctx.dataset.label}: ${ctx.parsed.y}건`;
-              }
-            }
-          }
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => `환급 예상: ${fmtMoneyShort(ctx.parsed.y)}` } }
         },
         scales: {
-          y: { position: 'left', title: { display: true, text: '이슈 건수', font: { size: 10 } }, ticks: { precision: 0 }, beginAtZero: true },
-          y1: { position: 'right', title: { display: true, text: '환급액', font: { size: 10 } }, grid: { drawOnChartArea: false }, beginAtZero: true, ticks: { callback: v => v >= 100000000 ? (v/100000000).toFixed(1)+'억' : v >= 10000 ? (v/10000).toFixed(0)+'만' : v } }
+          y: { beginAtZero: true, ticks: { callback: v => v >= 100000000 ? (v/100000000).toFixed(1)+'억' : v >= 10000 ? (v/10000).toFixed(0)+'만' : v } }
         }
       }
     });
@@ -1010,36 +1076,77 @@ async function renderDashboard() {
   }
 
   // ═ 누계 이슈 집계 (기간 내) — V5 재계산 로직 수정 ═
-  let totalCrit = 0, totalWarn = 0, totalRefund = 0, totalRefundCount = 0;
+  // V7 — 카드별 집계 (기본요금/전력요금/환급/사용량)
+  // 환급 예상금 = A2 과다 + A5 과다만 (kWh 단위 제외, 이중 계산 방지)
+  // 코드 prefix 기준:
+  //   A2 = 기본요금, A2r = 단가이상(info), A2-u/A2p-u = 과소(info green)
+  //   A5 = 전력량요금
+  const REFUND_CODES = new Set(['A2', 'A2p', 'A3', 'A5']);
+
+  let cardBaseCnt = 0, cardBaseAmt = 0;   // 기본요금 과다
+  let cardEnergyCnt = 0, cardEnergyAmt = 0; // 전력량요금 과다
+  let cardUsageKepco = 0, cardUsageMeter = 0; // 사용량 (급속 제외)
+  let totalCritIssues = 0;
+
   for (const m of issueMonths) {
     const v = validationsByYm[m.yyyymm];
-    // v.results 가 실제 저장 필드 (v.issues 아님)
     const results = v.results || v.issues || [];
     for (const r of results) {
+      // 사용량 카드 집계 (급속 아니고, 사용량검증제외 없고, 관제 매칭된 고객만)
+      const c = r.calcs || {};
+      if (c.총사용량_한전 && c.총사용량_관제 && !/검증제외/.test(c.충전기종류 || '')) {
+        cardUsageKepco += (c.총사용량_한전 || 0);
+        cardUsageMeter += (c.총사용량_관제 || 0);
+      }
       for (const iss of (r.issues || [])) {
-        if (iss.level === 'critical') totalCrit++;
-        else if (iss.level === 'warning') totalWarn++;
-        // 환급 가능: diff > 0 (한전이 더 청구) 인 치명 이슈만
-        if (iss.level === 'critical' && typeof iss.diff === 'number' && iss.diff > 0) {
-          totalRefund += iss.diff;
-          totalRefundCount++;
+        if (iss.level === 'critical') totalCritIssues++;
+        // 기본요금 / 전력요금 카드 집계 — 과다청구(diff > 0)만
+        if (iss.level === 'critical' && typeof iss.diff === 'number' && iss.diff > 0 && REFUND_CODES.has(iss.code)) {
+          if (iss.code === 'A2' || iss.code === 'A2p' || iss.code === 'A3') {
+            cardBaseCnt++;
+            cardBaseAmt += iss.diff;
+          } else if (iss.code === 'A5') {
+            cardEnergyCnt++;
+            cardEnergyAmt += iss.diff;
+          }
         }
       }
     }
   }
-  // V4 #29 — 연 환산: 조회 기간 N개월 → × (12 / N)
+
+  const totalRefund = cardBaseAmt + cardEnergyAmt;
+  const totalRefundCount = cardBaseCnt + cardEnergyCnt;
+
+  // 연 환산
   const periodMonths = Math.max(1, issueMonths.length);
   const annualRefund = totalRefund * (12 / periodMonths);
   const annualRefundCount = Math.round(totalRefundCount * (12 / periodMonths));
 
-  $('#ds-crit').textContent = fmt(totalCrit) + '건';
-  $('#ds-warn').textContent = fmt(totalWarn) + '건';
-  // V5 환급액: "X원 (N건)" 형식
-  $('#ds-refund').innerHTML = `${fmtMoneyShort(annualRefund)} <span style="font-size:13px;color:var(--text-muted);font-weight:500;">(${fmt(annualRefundCount)}건)</span>`;
-  $('#ds-crit-sub').textContent = issueMonths.length > 0 ? `${issueMonths.length}개월 누계` : '검증 대기중';
-  $('#ds-refund-sub').textContent = issueMonths.length > 0
-    ? `조회 ${periodMonths}개월 · 발견 ${fmtMoneyShort(totalRefund)} (${totalRefundCount}건) → 연 환산 (×${(12/periodMonths).toFixed(1)})`
-    : '검증 대기중';
+  // 카드 텍스트 — V7 새 레이아웃
+  // 기존: ds-crit/ds-warn/ds-refund → 새 필드로 매핑
+  if ($('#ds-crit')) $('#ds-crit').textContent = fmt(cardBaseCnt) + '건';
+  if ($('#ds-crit-sub')) $('#ds-crit-sub').innerHTML = cardBaseAmt > 0 ? `${fmtMoneyShort(cardBaseAmt)} 과다청구` : '-';
+  if ($('#ds-warn')) $('#ds-warn').textContent = fmt(cardEnergyCnt) + '건';
+  if ($('#ds-warn-sub')) $('#ds-warn-sub').innerHTML = cardEnergyAmt > 0 ? `${fmtMoneyShort(cardEnergyAmt)} 과다청구` : '-';
+  if ($('#ds-refund')) $('#ds-refund').innerHTML = `${fmtMoneyShort(annualRefund)} <span style="font-size:13px;color:var(--text-muted);font-weight:500;">(${fmt(annualRefundCount)}건)</span>`;
+  if ($('#ds-refund-sub')) {
+    const loYm = issueMonths.length > 0 ? issueMonths[0].yyyymm : '';
+    const hiYm = issueMonths.length > 0 ? issueMonths[issueMonths.length - 1].yyyymm : '';
+    $('#ds-refund-sub').innerHTML = issueMonths.length > 0
+      ? `${loYm.substring(0,4)}.${loYm.substring(4,6)} ~ ${hiYm.substring(0,4)}.${hiYm.substring(4,6)} 조회 (연환산)`
+      : '검증 대기중';
+  }
+  // 4번째 카드: 사용량 비교 (한전 vs 관제, 급속 제외)
+  if ($('#ds-usage')) {
+    const diff = cardUsageKepco - cardUsageMeter;
+    $('#ds-usage').innerHTML = `${fmt(Math.round(cardUsageKepco))} <span style="color:var(--text-muted);font-size:13px;">/</span> ${fmt(Math.round(cardUsageMeter))}`;
+  }
+  if ($('#ds-usage-sub')) {
+    const diff = cardUsageKepco - cardUsageMeter;
+    $('#ds-usage-sub').innerHTML = cardUsageKepco > 0
+      ? `차이 ${diff >= 0 ? '+' : ''}${fmt(Math.round(diff))} kWh (급속 제외)`
+      : '검증 대기중';
+  }
 
   // ═ 누적 월별 데이터 테이블은 기간 필터 무시 — 항상 전체 표시 (데이터 관리 패널) ═
   renderMonthsTable(allMonths);
@@ -1511,6 +1618,125 @@ function periodKey(custNo, useStart, useEnd) {
   return `${custNo}|${normalizeDate(useStart)}|${normalizeDate(useEnd)}`;
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  V7 — 요금적용전력 12개월 피크 잠김 계산 (고압 전용)
+// ═══════════════════════════════════════════════════════════════
+// 한전 룰:
+//   직전 12개월 중 12/1/2/7/8/9월 + 당월 = 7개 슬롯
+//   이 중 최대 최대수요전력 = 요금적용전력
+//   단 최대값이 계약전력 × 30% 미만 → 계약전력 × 30% (하한)
+//
+// 빌코리아 CSV 필드:
+//   최대수요전력(주간) - W 단위 누적값
+//   전월지침 = 앞 월 W값
+//   당월 최대수요전력 (kW) = (당월지침 - 전월지침) / 1000
+
+// 사용시작 기준 전월 YYYYMM
+function prevMonthFromUseStart(useStartStr) {
+  const d = normalizeDate(useStartStr);
+  if (!d || d.length < 10) return '';
+  const y = +d.substring(0, 4);
+  const m = +d.substring(5, 7);
+  const pm = m === 1 ? 12 : m - 1;
+  const py = m === 1 ? y - 1 : y;
+  return py + String(pm).padStart(2, '0');
+}
+
+// 고객의 과거 빌(bills) 리스트에서 월별 당월 최대수요전력(kW) 계산
+// 반환: { 'YYYYMM': {demandKw, contractKw, appliedKw, startDate} }
+function calcMonthlyMaxDemand(bills) {
+  if (!Array.isArray(bills) || bills.length === 0) return {};
+  // 사용시작 날짜로 정렬
+  const sorted = [...bills].sort((a, b) => (a.사용시작 || '').localeCompare(b.사용시작 || ''));
+  const result = {};
+  let prevReading = null;  // W 단위
+  for (const b of sorted) {
+    const ym = b.billYyyymm || '';
+    if (!ym) continue;
+    const curReading = +b.최대수요전력주간 || +b.최대수요전력 || 0;  // W
+    let demandKw = 0;
+    if (prevReading !== null && curReading > prevReading) {
+      demandKw = Math.round((curReading - prevReading) / 1000);
+    } else {
+      // 빌코리아에 전월지침이 있으면 거기서 역산
+      const prevField = +b.전월최대수요전력 || 0;
+      if (curReading > 0 && prevField > 0) {
+        demandKw = Math.round((curReading - prevField) / 1000);
+      }
+    }
+    result[ym] = {
+      demandKw,
+      contractKw: +b.계약전력 || 0,
+      appliedKw: +b.요금적용전력 || 0,
+      startDate: normalizeDate(b.사용시작),
+      endDate: normalizeDate(b.사용끝),
+    };
+    if (curReading > 0) prevReading = curReading;
+  }
+  return result;
+}
+
+// 특정 월의 요금적용전력 예상값 계산 (7-slot 피크 잠김)
+// 입력: monthlyData {YYYYMM: {demandKw, contractKw}}, 대상 월 YYYYMM
+// 반환: { expected, sourceMonth, is30PctFloor, slots }
+function calcExpectedAppliedPower(monthly, targetYm, contractKw) {
+  if (!targetYm || targetYm.length < 6) return null;
+  const y = +targetYm.substring(0, 4);
+  const m = +targetYm.substring(4, 6);
+  // 7 슬롯: 직전 12개월 내의 12,1,2,7,8,9월 + 당월
+  const slotMonths = [12, 1, 2, 7, 8, 9];
+  const slots = [];
+  // 직전 12개월 범위
+  for (let i = 0; i < 12; i++) {
+    const dy = m - i <= 0 ? y - 1 : y;
+    const dm = m - i <= 0 ? m - i + 12 : m - i;
+    if (!slotMonths.includes(dm)) continue;
+    const sym = dy + String(dm).padStart(2, '0');
+    const data = monthly[sym];
+    if (data && data.demandKw > 0) slots.push({ ym: sym, demandKw: data.demandKw });
+  }
+  // 당월 추가
+  const curData = monthly[targetYm];
+  if (curData && curData.demandKw > 0) slots.push({ ym: targetYm, demandKw: curData.demandKw });
+
+  if (slots.length === 0) return null;
+  // 최댓값 슬롯
+  slots.sort((a, b) => b.demandKw - a.demandKw);
+  const peak = slots[0];
+  const floor30 = Math.round(contractKw * 0.3);
+  let expected = peak.demandKw;
+  let is30PctFloor = false;
+  if (peak.demandKw < floor30) {
+    expected = floor30;
+    is30PctFloor = true;
+  }
+  return {
+    expected,
+    sourceMonth: peak.ym,
+    peakKw: peak.demandKw,
+    is30PctFloor,
+    slotCount: slots.length,
+    slots,
+  };
+}
+
+// 리셋월 추정 — 연속된 월에서 요금적용전력이 크게 하락하는 달 찾기
+function estimateResetMonth(bills) {
+  if (!bills || bills.length < 2) return null;
+  const sorted = [...bills].sort((a, b) => (a.billYyyymm || '').localeCompare(b.billYyyymm || ''));
+  let prevApplied = 0;
+  let resetMonth = null;
+  for (const b of sorted) {
+    const cur = +b.요금적용전력 || 0;
+    if (prevApplied > 0 && cur > 0 && cur < prevApplied * 0.6) {
+      // 40%+ 급락 = 리셋
+      resetMonth = b.billYyyymm;
+    }
+    if (cur > 0) prevApplied = cur;
+  }
+  return resetMonth;
+}
+
 // 빌코리아 컬럼 별칭
 const BILL_ALIASES = {
   custNo: ['고객번호'],
@@ -1521,6 +1747,7 @@ const BILL_ALIASES = {
   appliedPower: ['요금적용전력'],
   maxPowerLow: ['최대수요전력(저압)'],
   maxPowerDay: ['최대수요전력(주간)'],
+  maxPowerNight: ['최대수요전력(야간)'],
   baseFee: ['기본요금'],
   baseFeeRate: ['기본요금 단가', '기본요금단가'],
   useStart: ['사용시작'],
@@ -1665,6 +1892,8 @@ function normalizeBillRow(r, m) {
     계약전력: num(g('contractPower')),
     요금적용전력: num(g('appliedPower')),
     최대수요전력: num(g('maxPowerLow')) || num(g('maxPowerDay')),
+    최대수요전력주간: num(g('maxPowerDay')),   // V7 — W 단위 누적지침 (피크 계산용)
+    최대수요전력야간: num(g('maxPowerNight')), // V7
     기본요금: num(g('baseFee')),
     기본요금단가: num(g('baseFeeRate')),
     사용시작: String(g('useStart') || ''),
@@ -1825,10 +2054,19 @@ function fmtCmp(label1, v1, label2, v2, unit) {
 }
 
 // V6 — meterData 인자: { byPeriod, byCust } 형태 (신규) 또는 구 custNo 맵 (레거시)
-function validate(bills, meterData, prevBills) {
+// V7 — historyBillsByCust: { custNo: [bill, ...] } 12개월치 빌 이력 (피크 잠김 계산용, 선택사항)
+function validate(bills, meterData, prevBills, historyBillsByCust) {
   const out = [];
   const prevByCust = {};
   if (prevBills) for (const p of prevBills) prevByCust[p.custNo] = p;
+
+  // V7 — 고객별 월별 최대수요전력 미리 계산
+  const demandByCust = {};
+  if (historyBillsByCust) {
+    for (const cust in historyBillsByCust) {
+      demandByCust[cust] = calcMonthlyMaxDemand(historyBillsByCust[cust]);
+    }
+  }
 
   // V6 — 입력 형식 정규화 (구 버전은 byCust만 받아도 동작)
   const byPeriod = (meterData && meterData.byPeriod) || {};
@@ -1896,7 +2134,8 @@ function validate(bills, meterData, prevBills) {
         calcs.기본요금_식 = `${fmt(stdRate)} × ${ePow}kW${isProrated ? ` × ${days}/30일` : ''} (${isLow ? '저압' : '고압'})`;
 
         const diff = b.기본요금 - exp;
-        const tol = amtTol(exp);
+        // V7 — 기본요금 허용치 3% (단가가 정확하면 오차 거의 없어야 함)
+        const tol = Math.max(settings.amountTol || 100, exp * 0.03);
         if (Math.abs(diff) > tol) {
           const isOvercharge = diff > 0;
           issues.push({
@@ -1904,9 +2143,9 @@ function validate(bills, meterData, prevBills) {
             level: isOvercharge ? 'critical' : 'info',
             cat: 'money', col: '기본요금',
             reason: isOvercharge
-              ? `기본요금 과다청구 (한전: ${fmt(b.기본요금)} / 계산: ${fmt(exp)} / 차: +${fmt(diff)})`
-              : `기본요금 과소청구 — 한전 이득 (한전: ${fmt(b.기본요금)} / 계산: ${fmt(exp)} / 차: ${fmt(diff)})`,
-            detail: `${fmt(stdRate)}원 × ${ePow}kW${isProrated ? ` × ${days}/30일` : ''} = ${fmt(exp)}원 (10% 허용)${!isOvercharge ? ' — 우리 이득이라 이슈는 아님' : ''}`,
+              ? `기본요금 과다청구 / 한전: ${fmt(b.기본요금)}원 / 계산: ${fmt(exp)}원 / +${fmt(diff)}원 더청구`
+              : `기본요금 과소청구 / 한전: ${fmt(b.기본요금)}원 / 계산: ${fmt(exp)}원 / ${fmt(diff)}원 덜청구`,
+            detail: `${fmt(stdRate)}원 × ${ePow}kW${isProrated ? ` × ${days}/30일` : ''} = ${fmt(exp)}원`,
             diff,
             tag: isOvercharge ? null : 'green',
           });
@@ -1958,6 +2197,104 @@ function validate(bills, meterData, prevBills) {
     }
     // 요금적용전력 ≤ 0 이면 검증 스킵 (한전 미입력)
 
+    // ═════ V7 A4d: 요금적용전력 이상치 (고압 전용) ═════
+    // 로직: 고압에서 요금적용전력이 계약전력 × 3배 초과 → 발전기 의심 치명
+    //      단, 실제로 그 값이 기본요금에 반영된 경우에만 이슈 (3% 이내면 반영됨)
+    //      반영 안 됐으면 스킵 (한전이 계약전력 fallback)
+    const isHighV = !/저압/.test(b.계약종별 || '');
+    if (isHighV && b.요금적용전력 > 0 && b.계약전력 > 0 && b.기본요금 > 0) {
+      const stdRateHV = 2580;
+      const expWithApplied = stdRateHV * b.요금적용전력;
+      const reflectedInFee = Math.abs(b.기본요금 - expWithApplied) / expWithApplied < 0.03;
+
+      if (reflectedInFee) {
+        // 요금적용전력이 실제로 반영된 경우만 이상치 체크
+        if (b.요금적용전력 > b.계약전력 * 3) {
+          issues.push({
+            code: 'A4d', level: 'critical', cat: 'contract', col: '요금적용전력',
+            reason: `요금적용전력 비정상 과다 (계약: ${b.계약전력}kW / 적용: ${b.요금적용전력}kW / ${(b.요금적용전력/b.계약전력).toFixed(1)}배)`,
+            detail: `요금적용전력이 계약전력의 ${(b.요금적용전력/b.계약전력).toFixed(1)}배 — 발전기 가동 의심 / 센서 오류 / 한전 입력 오류`,
+            diff: b.기본요금 - (stdRateHV * b.계약전력),
+          });
+        } else if (b.요금적용전력 > b.계약전력 * 1.5) {
+          issues.push({
+            code: 'A4e', level: 'warning', cat: 'contract', col: '요금적용전력',
+            reason: `요금적용전력 과다 (계약: ${b.계약전력}kW / 적용: ${b.요금적용전력}kW / ${(b.요금적용전력/b.계약전력).toFixed(1)}배)`,
+            detail: `요금적용전력이 계약전력의 1.5배 초과`,
+          });
+        }
+      }
+      // 반영 안 됐으면 info 주황 태그만
+      else if (b.요금적용전력 > b.계약전력 * 1.5) {
+        issues.push({
+          code: 'A4r', level: 'info', cat: 'contract', col: '요금적용전력',
+          reason: `요금적용전력 이상 (계약: ${b.계약전력}kW / 적용: ${b.요금적용전력}kW) — 금액엔 미반영`,
+          detail: `요금적용전력 값이 비정상이지만 기본요금엔 반영되지 않음 (한전 자체 보정)`,
+          tag: 'orange',
+        });
+      }
+    }
+
+    // ═════ V7 A4g/h/i: 요금적용전력 12개월 피크 잠김 (고압 전용) ═════
+    if (isHighV && b.요금적용전력 > 0 && b.계약전력 > 0) {
+      const monthly = demandByCust[b.custNo];
+      if (monthly && Object.keys(monthly).length >= 2) {
+        const exp = calcExpectedAppliedPower(monthly, b.billYyyymm, b.계약전력);
+        if (exp && exp.slotCount > 0) {
+          calcs.요금적용전력_예상 = exp.expected;
+          calcs.요금적용전력_기준월 = exp.sourceMonth;
+          calcs.요금적용전력_슬롯수 = exp.slotCount;
+
+          const diff = b.요금적용전력 - exp.expected;
+          // 10% 이상 차이면 이슈
+          if (Math.abs(diff) > Math.max(2, exp.expected * 0.1)) {
+            const isOver = diff > 0;
+            issues.push({
+              code: isOver ? 'A4g' : 'A4g-u',
+              level: isOver ? 'warning' : 'info',
+              cat: 'contract', col: '요금적용전력',
+              reason: isOver
+                ? `요금적용전력 (한전: ${b.요금적용전력} / 계산: ${exp.expected} / 차: +${fmt(diff)}kW)`
+                : `요금적용전력 과소 — 한전 이득 (한전: ${b.요금적용전력} / 계산: ${exp.expected} / 차: ${fmt(diff)}kW)`,
+              detail: `직전 12개월 중 12/1/2/7/8/9월+당월 피크 = ${exp.peakKw}kW (${exp.sourceMonth} 기준)${exp.is30PctFloor ? ' · 계약전력×30% 하한 적용' : ''}`,
+              diff,
+              tag: isOver ? null : 'green',
+            });
+          }
+
+          // A4h — 30% 하한 적용된 경우 info 표기
+          if (exp.is30PctFloor) {
+            issues.push({
+              code: 'A4h', level: 'info', cat: 'contract', col: '요금적용전력',
+              reason: `30% 하한 적용 (피크 ${exp.peakKw}kW < 계약 ${b.계약전력}×30%=${Math.round(b.계약전력*0.3)}kW)`,
+              detail: `최대수요전력 최대값이 계약전력의 30% 미만이라 한전 약관상 계약전력×30%로 산정됨`,
+            });
+          }
+        }
+      }
+    }
+
+    // ═════ V7 A4i: 초과사용부가금 발생 표기 ═════
+    if (b.초과요금 > 0) {
+      issues.push({
+        code: 'A4i', level: 'info', cat: 'contract', col: '초과요금',
+        reason: `초과사용부가금 발생 (${fmt(b.초과요금)}원)`,
+        detail: `요금적용전력이 계약전력을 초과해 초과사용부가금 청구됨 — 계약 증설 검토`,
+      });
+    }
+
+    // ═════ V7 A4m: 최대수요전력 이상치 (물리적으로 말이 안 됨) ═════
+    const maxDemand = Math.max(b.최대수요전력 || 0, b.최대수요전력주간 || 0);
+    if (maxDemand > 0 && b.계약전력 > 0) {
+      if (maxDemand > b.계약전력 * 3) {
+        issues.push({
+          code: 'A4m', level: 'warning', cat: 'contract', col: '최대수요전력',
+          reason: `최대수요전력 비정상 (계약: ${b.계약전력}kW / 최대수요: ${fmt(maxDemand)} / ${(maxDemand/b.계약전력).toFixed(1)}배)`,
+          detail: `계약전력의 ${(maxDemand/b.계약전력).toFixed(1)}배 — 발전기 가동 / 센서 오류 의심`,
+        });
+      }
+    }
+
     // ═════ A5: 전력량요금 교차검증 (V5 재설계) ═════
     // 빌코리아에 단가 값이 있으면 그 단가 × 사용량으로 계산
     // 단가가 0이면 선택요금 유추해서 단가표에서 조회
@@ -2005,9 +2342,9 @@ function validate(bills, meterData, prevBills) {
           level: isOvercharge ? 'critical' : 'info',
           cat: 'money', col: '전력량요금',
           reason: isOvercharge
-            ? `전력량요금 과다청구 (한전: ${fmt(b.전력량요금)} / 계산: ${fmt(exp)} / 차: +${fmt(diff)})`
-            : `전력량요금 과소청구 — 한전 이득 (한전: ${fmt(b.전력량요금)} / 계산: ${fmt(exp)} / 차: ${fmt(diff)})`,
-          detail: `(심야×단가 + 주간×단가 + 저녁×단가 + 경부하×단가 + 중부하×단가 + 최대부하×단가) = ${fmt(exp)}원 (10% 허용)${!isOvercharge ? ' — 우리 이득이라 이슈는 아님' : ''}`,
+            ? `전력량요금 과다청구 / 한전: ${fmt(b.전력량요금)}원 / 계산: ${fmt(exp)}원 / +${fmt(diff)}원 더청구`
+            : `전력량요금 과소청구 / 한전: ${fmt(b.전력량요금)}원 / 계산: ${fmt(exp)}원 / ${fmt(diff)}원 덜청구`,
+          detail: `시간대별 단가×사용량 합산${selectType ? ` (선택${selectType})` : ''}`,
           diff,
           tag: isOvercharge ? null : 'green',
         });
@@ -2028,7 +2365,7 @@ function validate(bills, meterData, prevBills) {
         issues.push({
           code: 'A6', level: 'warning', cat: 'money', col: '부가가치세',
           reason: `부가세 (한전: ${fmt(b.부가가치세)} / 계산: ${fmt(exp)} / 차: ${b.부가가치세 - exp >= 0 ? '+' : ''}${fmt(b.부가가치세 - exp)})`,
-          detail: `전기요금계 ${fmt(b.전기요금계)}원 × ${settings.vatRate}% = ${fmt(exp)}원 (10% 허용)`,
+          detail: `전기요금계 ${fmt(b.전기요금계)}원 × ${settings.vatRate}% = ${fmt(exp)}원`,
           diff: b.부가가치세 - exp,
         });
       } else {
@@ -2048,7 +2385,7 @@ function validate(bills, meterData, prevBills) {
         issues.push({
           code: 'A7', level: 'warning', cat: 'money', col: '전력기금',
           reason: `전력기금 (한전: ${fmt(b.전력기금)} / 계산: ${fmt(exp)} / 차: ${b.전력기금 - exp >= 0 ? '+' : ''}${fmt(b.전력기금 - exp)})`,
-          detail: `전기요금계 × ${rate}% (${b.billYyyymm} 기준 요율) = ${fmt(exp)}원, 10원 절사 (10% 허용)`,
+          detail: `전기요금계 × ${rate}% (${b.billYyyymm} 기준 요율) = ${fmt(exp)}원, 10원 절사`,
           diff: b.전력기금 - exp,
         });
       } else {
@@ -2067,7 +2404,7 @@ function validate(bills, meterData, prevBills) {
         issues.push({
           code: 'A8', level: 'warning', cat: 'money', col: '청구요금',
           reason: `청구요금 합산 (한전: ${fmt(b.청구요금)} / 계산: ${fmt(Math.round(expC))} / 차: ${b.청구요금 - expC >= 0 ? '+' : ''}${fmt(b.청구요금 - expC)})`,
-          detail: `전기요금계+부가세+전력기금+절사+연체료+가산금+정산 = ${fmt(Math.round(expC))}원 (10% 허용)`,
+          detail: `전기요금계+부가세+전력기금+절사+연체료+가산금+정산 = ${fmt(Math.round(expC))}원`,
           diff: b.청구요금 - expC,
         });
       } else {
@@ -2226,8 +2563,8 @@ function validate(bills, meterData, prevBills) {
           // 한전이 관제 대비 10% 초과로 많음 → 과다청구 의심
           issues.push({
             code: 'B13a', level: 'critical', cat: 'usage', col: c.name,
-            reason: `${c.name} 과다청구 의심 (한전: ${fmt(c.bill)} / 관제: ${fmt(c.meter)} / 차: +${fmt(diff)}kWh, +${pct.toFixed(1)}%)`,
-            detail: `한전이 관제보다 ${pct.toFixed(1)}% 많이 청구 — 설정 허용치 ${usagePct}% 초과`,
+            reason: `${c.name} 과다청구 / 한전: ${fmt(c.bill)}kWh / 관제: ${fmt(c.meter)}kWh / +${fmt(diff)}kWh 더청구`,
+            detail: `한전이 관제보다 ${pct.toFixed(1)}% 많이 청구`,
             diff,
           });
           bandIssueCount++;
@@ -2253,8 +2590,8 @@ function validate(bills, meterData, prevBills) {
           // 한전이 관제보다 10% 초과로 많음
           issues.push({
             code: 'B14a', level: 'critical', cat: 'usage', col: '총사용량',
-            reason: `총사용량 과다청구 의심 (한전: ${fmt(b.사용량)} / 관제: ${fmt(mTotal)} / 차: +${fmt(diff)}kWh, +${pct.toFixed(1)}%)`,
-            detail: `한전이 관제보다 ${pct.toFixed(1)}% 많이 청구 — 설정 허용치 ${usagePct}% 초과`,
+            reason: `총사용량 과다청구 / 한전: ${fmt(b.사용량)}kWh / 관제: ${fmt(mTotal)}kWh / +${fmt(diff)}kWh 더청구`,
+            detail: `한전이 관제보다 ${pct.toFixed(1)}% 많이 청구`,
             diff,
           });
         } else if (diff < 0) {
@@ -2494,7 +2831,17 @@ async function runValidation() {
       catch (e) { prevBills = null; }
     }
 
-    validationResults = validate(billData, meterData, prevBills && prevBills.length ? prevBills : null);
+    // V7 — 12개월 피크 잠김 계산용 이력 로드
+    let historyBillsByCust = {};
+    try {
+      const allBills = await db.bills.toArray();
+      for (const b of allBills) {
+        if (!historyBillsByCust[b.custNo]) historyBillsByCust[b.custNo] = [];
+        historyBillsByCust[b.custNo].push(b);
+      }
+    } catch (e) { console.warn('history load:', e); }
+
+    validationResults = validate(billData, meterData, prevBills && prevBills.length ? prevBills : null, historyBillsByCust);
 
     // 해지/누락/신규 감지 (누적 데이터 있을 때만)
     if (billYm) {
@@ -2568,6 +2915,7 @@ function updateBadges() {
 // V3 Phase 2 — 카테고리 뷰 필터 상태 (#6)
 window._currentCatView = null;
 window._catLevelFilter = { critical: true, warning: true, info: true };
+window._catCodeFilter = null;  // V7: 'period' | 'overcharge' | null
 
 function toggleLevelFilter(level) {
   window._catLevelFilter[level] = !window._catLevelFilter[level];
@@ -2575,9 +2923,25 @@ function toggleLevelFilter(level) {
   if (btn) btn.classList.toggle('active', window._catLevelFilter[level]);
   renderCategory(window._currentCatView);
 }
+function toggleCodeFilter(code) {
+  window._catCodeFilter = window._catCodeFilter === code ? null : code;
+  document.querySelectorAll('.filter-btn[data-code]').forEach(b => {
+    b.classList.toggle('active', b.dataset.code === window._catCodeFilter);
+  });
+  renderCategory(window._currentCatView);
+}
+function matchesCodeFilter(iss) {
+  const f = window._catCodeFilter;
+  if (!f) return true;
+  if (f === 'period') return iss.code === 'B15' || iss.code === 'B16';
+  if (f === 'overcharge') return ['A2', 'A2p', 'A3', 'A5'].includes(iss.code);
+  return true;
+}
 function clearCatFilters() {
   window._catLevelFilter = { critical: true, warning: true, info: true };
+  window._catCodeFilter = null;
   document.querySelectorAll('.filter-btn[data-level]').forEach(b => b.classList.add('active'));
+  document.querySelectorAll('.filter-btn[data-code]').forEach(b => b.classList.remove('active'));
   $('#catSearch').value = '';
   renderCategory(window._currentCatView);
 }
@@ -2609,6 +2973,7 @@ function renderCategory(view) {
     for (const i of r.issues) {
       if (i.cat !== catKey) continue;
       if (!levelFilter[i.level]) continue;
+      if (!matchesCodeFilter(i)) continue;  // V7
       if (searchQ) {
         const hay = [
           r.bill.custNo,
@@ -2689,6 +3054,7 @@ function exportCategoryCSV() {
     for (const i of r.issues) {
       if (i.cat !== catKey) continue;
       if (!levelFilter[i.level]) continue;
+      if (!matchesCodeFilter(i)) continue;
       if (searchQ) {
         const hay = [r.bill.custNo, r.bill.주소||'', (r.meter&&r.meter.충전소명)||'', i.code||'', i.col||'', i.reason||''].join(' ').toLowerCase();
         if (!hay.includes(searchQ)) continue;
@@ -2874,7 +3240,17 @@ async function runMonthValidation(yyyymm) {
       prevBills = await db.bills.where('yyyymm').equals(prevYm).toArray();
     }
 
-    validationResults = validate(bills, meterInput, prevBills && prevBills.length ? prevBills : null);
+    // V7 — 12개월 피크 잠김 계산용 이력 로드
+    let historyBillsByCust = {};
+    try {
+      const allBills = await db.bills.toArray();
+      for (const b of allBills) {
+        if (!historyBillsByCust[b.custNo]) historyBillsByCust[b.custNo] = [];
+        historyBillsByCust[b.custNo].push(b);
+      }
+    } catch (e) { console.warn('history load:', e); }
+
+    validationResults = validate(bills, meterInput, prevBills && prevBills.length ? prevBills : null, historyBillsByCust);
 
     // 해지/누락/신규 감지
     try {
