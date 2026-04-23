@@ -289,12 +289,12 @@
   <div class="login-card">
     <div class="everon-logo-img login-logo-img" aria-label="에버온"></div>
     <div class="login-title">전기요금 검증 시스템</div>
-    <div class="login-sub">에버온 × 한전 청구서 교차검증 도구</div>
+    <div class="login-sub">에버온 전략기획실 내부전용 · V8</div>
     <div class="login-field"><label>아이디</label><input type="text" id="loginId" autocomplete="username"></div>
     <div class="login-field"><label>비밀번호</label><input type="password" id="loginPw" autocomplete="current-password" onkeydown="if(event.key==='Enter') tryLogin()"></div>
     <button class="login-btn" onclick="tryLogin()">로그인</button>
     <div class="login-err" id="loginErr"></div>
-    <div class="login-foot">© 에버온 전략기획팀 · 내부 전용</div>
+    <div class="login-foot">© 에버온 전략기획실 · 내부 전용 · V8</div>
   </div>
 </div>
 
@@ -935,14 +935,26 @@ function populatePeriodDropdowns(months) {
   const fillSelect = (id, values, selected) => {
     const el = $(id);
     if (!el) return;
+    // V8 — 이미 렌더된 상태면 선택값 유지
+    const currentVal = el.value;
+    const wasEmpty = el.options.length === 0;
     el.innerHTML = values.map(v => `<option value="${v}" ${v === selected ? 'selected' : ''}>${v}</option>`).join('');
+    // 기존 값이 있고 새 옵션에 포함되면 유지
+    if (!wasEmpty && currentVal && values.includes(currentVal)) {
+      el.value = currentVal;
+    }
   };
   const firstYm = months[0].yyyymm;
   const lastYm = months[months.length - 1].yyyymm;
-  fillSelect('#periodStartY', yrList, firstYm.substring(0, 4));
-  fillSelect('#periodStartM', monthList, firstYm.substring(4, 6));
-  fillSelect('#periodEndY', yrList, lastYm.substring(0, 4));
-  fillSelect('#periodEndM', monthList, lastYm.substring(4, 6));
+  // V8 — periodRange 설정돼 있으면 그 값 유지, 없으면 전체 범위
+  const sy = periodRange ? periodRange.from.substring(0, 4) : firstYm.substring(0, 4);
+  const sm = periodRange ? periodRange.from.substring(4, 6) : firstYm.substring(4, 6);
+  const ey = periodRange ? periodRange.to.substring(0, 4) : lastYm.substring(0, 4);
+  const em = periodRange ? periodRange.to.substring(4, 6) : lastYm.substring(4, 6);
+  fillSelect('#periodStartY', yrList, sy);
+  fillSelect('#periodStartM', monthList, sm);
+  fillSelect('#periodEndY', yrList, ey);
+  fillSelect('#periodEndM', monthList, em);
 }
 
 // V7 — 기간 필터에 맞는 월 목록
@@ -1030,7 +1042,8 @@ async function renderDashboard() {
       let total = 0, surcharge = 0;
       for (const r of results) {
         for (const iss of (r.issues || [])) {
-          if (iss.level === 'critical' && typeof iss.diff === 'number' && iss.diff > 0 && REFUND_CODES.has(iss.code)) {
+          // V8 방어: 1천만원 넘는 이슈는 레거시 버그 스킵
+          if (iss.level === 'critical' && typeof iss.diff === 'number' && iss.diff > 0 && iss.diff < 10000000 && REFUND_CODES.has(iss.code)) {
             total += iss.diff;
           }
         }
@@ -1119,7 +1132,8 @@ async function renderDashboard() {
         if (iss.level === 'critical') totalCritIssues++;
         // 기본요금 이상치 (단가 2580/2390 아닌 것)
         if (iss.code === 'A2r') cardBaseAnomalyCnt++;
-        if (iss.level === 'critical' && typeof iss.diff === 'number' && iss.diff > 0 && REFUND_CODES.has(iss.code)) {
+        // V8 — 방어: 한 건 환급액이 1천만원 넘으면 레거시 버그 데이터 의심, 스킵
+        if (iss.level === 'critical' && typeof iss.diff === 'number' && iss.diff > 0 && iss.diff < 10000000 && REFUND_CODES.has(iss.code)) {
           if (iss.code === 'A2' || iss.code === 'A2p' || iss.code === 'A3') {
             cardBaseCnt++;
             cardBaseAmt += iss.diff;
@@ -1153,16 +1167,18 @@ async function renderDashboard() {
       ? `${loYm.substring(0,4)}.${loYm.substring(4,6)} ~ ${hiYm.substring(0,4)}.${hiYm.substring(4,6)} 조회 (연환산)`
       : '검증 대기중';
   }
-  // V8 — 사용량 MWh 단위
+  // V8 — 사용량 MWh 단위 (천 단위 컴마)
   if ($('#ds-usage')) {
     const kepcoMwh = cardUsageKepco / 1000;
     const meterMwh = cardUsageMeter / 1000;
-    $('#ds-usage').innerHTML = `${kepcoMwh.toFixed(1)} <span style="color:var(--text-muted);font-size:13px;">/</span> ${meterMwh.toFixed(1)} <span style="color:var(--text-muted);font-size:14px;">MWh</span>`;
+    const f = (v) => v.toLocaleString('ko-KR', { maximumFractionDigits: 1 });
+    $('#ds-usage').innerHTML = `${f(kepcoMwh)} <span style="color:var(--text-muted);font-size:13px;">/</span> ${f(meterMwh)} <span style="color:var(--text-muted);font-size:14px;">MWh</span>`;
   }
   if ($('#ds-usage-sub')) {
     const diffMwh = (cardUsageKepco - cardUsageMeter) / 1000;
+    const f = (v) => v.toLocaleString('ko-KR', { maximumFractionDigits: 1 });
     $('#ds-usage-sub').innerHTML = cardUsageKepco > 0
-      ? `차이 ${diffMwh >= 0 ? '+' : ''}${diffMwh.toFixed(1)} MWh (급속 제외)`
+      ? `차이 ${diffMwh >= 0 ? '+' : ''}${f(diffMwh)} MWh (급속 제외)`
       : '검증 대기중';
   }
 
@@ -1180,7 +1196,10 @@ function renderMonthsTable(months) {
     <div class="card" id="monthsTableCard" style="margin-top: 20px;">
       <div class="card-head">
         <div class="card-title">📅 누적 월별 데이터</div>
-        <span class="tag blue">${months.length}개월</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="tag blue">${months.length}개월</span>
+          <button class="btn btn-primary btn-sm" onclick="runAllValidations()" title="모든 월 재검증 (관제 매칭된 월만)">🔁 전체 일괄 재실행</button>
+        </div>
       </div>
       <table class="issue-table">
         <thead><tr>
@@ -1419,6 +1438,9 @@ async function runRefundQuery() {
     let totalCrit = 0, totalRefund = 0, totalBills = 0;
     const monthlyTrend = []; // {ym, crit, refund}
 
+    // V9 — 환급 기준: 과다청구(diff>0)만 + A2/A2p/A3/A5만 (사용량 kWh 이슈 제외)
+    const REFUND_CODES = new Set(['A2', 'A2p', 'A3', 'A5']);
+
     for (const v of target) {
       const s = v.summary || {};
       totalCrit += s.crit || 0;
@@ -1427,13 +1449,15 @@ async function runRefundQuery() {
       for (const r of (v.results || [])) {
         for (const i of r.issues) {
           if (i.level !== 'critical') continue;
-          const amt = Math.abs(i.diff || 0);
+          // V9 — 과다청구(+)만, 과소청구(-) 제외. 금액 이슈만.
+          if (!REFUND_CODES.has(i.code)) continue;
+          if (typeof i.diff !== 'number' || i.diff <= 0) continue;
+          if (i.diff >= 10000000) continue;  // 레거시 버그 방어
+          const amt = i.diff;
           monthRefund += amt;
-          // 유형별
           if (!byCode[i.code]) byCode[i.code] = { count: 0, amount: 0, label: i.reason || i.msg || i.code };
           byCode[i.code].count++;
           byCode[i.code].amount += amt;
-          // custNo별
           const c = r.bill?.custNo;
           if (c) {
             if (!byCust[c]) byCust[c] = { custNo: c, total: 0, months: new Set(), 충전소명: (r.meter && r.meter.충전소명) || '', 주소: r.bill.주소 || '', issues: [] };
@@ -2633,16 +2657,36 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
         }
       }
 
-      // V5 #35 — C16: 정격용량합 > 계약전력 → info 강등 (상이 표기만)
+      // V9 #C16 재설계: 충전기 N개면 +N kW 허용 (완전 일치 OR N kW 이내)
+      // 초과요금 발생한 곳은 치명 (허용치 내라도)
       if (m.정격용량합 > 0 && b.계약전력 > 0) {
         const diff = m.정격용량합 - b.계약전력;
-        if (diff > settings.capTol) {
+        const tol = m.충전기수 > 0 ? m.충전기수 : 1;  // 충전기 N개 = +N kW 허용
+        const hasOverFee = (b.초과요금 || 0) > 0;
+        if (diff > tol) {
+          if (hasOverFee) {
+            // 허용 초과 + 초과요금 발생 → 치명
+            issues.push({
+              code: 'C16a', level: 'critical', cat: 'contract', col: '계약전력',
+              reason: `정격용량 초과 + 초과요금 발생 (정격합: ${m.정격용량합} / 계약: ${b.계약전력}kW / 차: +${fmt(diff)}kW / 초과요금: ${fmt(b.초과요금)}원)`,
+              detail: `충전기 ${m.충전기수}대 정격용량 합이 계약전력 초과 (${tol}kW 허용), 초과요금도 청구됨 — 계약 증설 시급`,
+              diff,
+            });
+          } else {
+            issues.push({
+              code: 'C16', level: 'info', cat: 'contract', col: '계약전력',
+              reason: `계약전력 상이 (정격합: ${m.정격용량합} / 계약: ${b.계약전력}kW / 차: +${fmt(diff)}kW)`,
+              detail: `충전기 ${m.충전기수}대 정격용량 합이 계약전력 초과 (허용 ${tol}kW) — 확인 필요`,
+              diff,
+              tag: 'orange',
+            });
+          }
+        } else if (hasOverFee) {
+          // 허용 범위 내이지만 초과요금 있음 → 주의
           issues.push({
-            code: 'C16', level: 'info', cat: 'contract', col: '계약전력',
-            reason: `계약전력 상이 (정격합: ${m.정격용량합} / 계약: ${b.계약전력}kW / 차: +${fmt(diff)}kW)`,
-            detail: `충전기 ${m.충전기수}대 (${cType}) 정격용량 합이 계약전력 초과 — 확인 필요 (체크만)`,
-            diff,
-            tag: 'orange',
+            code: 'C16b', level: 'warning', cat: 'contract', col: '초과요금',
+            reason: `정격용량 일치하나 초과요금 발생 (정격합: ${m.정격용량합}kW / 계약: ${b.계약전력}kW / 초과요금: ${fmt(b.초과요금)}원)`,
+            detail: `사용량이 계약전력 초과 — 계약 증설 검토`,
           });
         }
       }
@@ -3818,7 +3862,11 @@ async function exportExcel(filterCat) {
     const metaSheet = wb.addWorksheet('ℹ️검증정보');
     const critCount = validationResults.filter(r => r.issues.some(i => i.level === 'critical')).length;
     const warnCount = validationResults.filter(r => r.issues.some(i => i.level === 'warning')).length;
-    const totalRefund = validationResults.reduce((s, r) => s + r.issues.filter(i => i.level === 'critical').reduce((a, i) => a + Math.abs(i.diff || 0), 0), 0);
+    // V9 — 환급액: money 카테고리(A2/A2p/A3/A5) 과다청구만
+    const REFUND_CODES_META = new Set(['A2', 'A2p', 'A3', 'A5']);
+    const totalRefund = validationResults.reduce((s, r) => s + r.issues
+      .filter(i => i.level === 'critical' && REFUND_CODES_META.has(i.code) && typeof i.diff === 'number' && i.diff > 0 && i.diff < 10000000)
+      .reduce((a, i) => a + i.diff, 0), 0);
     metaSheet.addRow(['▼ 검증 요약']);
     metaSheet.addRow(['검증 일시', new Date().toLocaleString('ko-KR')]);
     metaSheet.addRow(['청구월', inferBillMonth(billData)]);
