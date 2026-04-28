@@ -15,10 +15,24 @@
     --everon-blue: #16ACE3;
     --everon-blue-soft: #e8f7fd;
     --everon-blue-hover: #0f95c7;
+    --everon-blue-deep: #0c7fa8;
     --everon-dark: #1F2A44;
     --everon-dark-soft: #2d3a5c;
-    --bg: #f7f9fb;
+    /* V14 — 보조 색상 팔레트 (차트/액센트용) */
+    --accent-violet: #7c5cff;
+    --accent-violet-soft: #efeaff;
+    --accent-mint: #14b8a6;
+    --accent-mint-soft: #e6fbf7;
+    --accent-coral: #ff6b6b;
+    --accent-coral-soft: #ffeded;
+    --accent-amber: #f59e0b;
+    --accent-amber-soft: #fff7e6;
+    --accent-rose: #ec4899;
+    --accent-rose-soft: #fef0f7;
+    --bg: #f5f7fb;
+    --bg-soft: #fafbfd;
     --surface: #ffffff;
+    --surface-alt: #f8fafc;
     --border: #e5e9f0;
     --border-strong: #cfd6e0;
     --text: #1F2A44;
@@ -32,12 +46,24 @@
     --ok-bg: #ecfdf5;
     --info: var(--everon-blue);
     --info-bg: var(--everon-blue-soft);
-    --shadow-sm: 0 1px 2px rgba(31, 42, 68, 0.04);
-    --shadow-md: 0 4px 16px rgba(31, 42, 68, 0.08);
-    --shadow-lg: 0 12px 32px rgba(31, 42, 68, 0.12);
+    /* V14 — shadow 계층 강화 */
+    --shadow-xs: 0 1px 2px rgba(31, 42, 68, 0.04);
+    --shadow-sm: 0 2px 4px rgba(31, 42, 68, 0.05), 0 1px 2px rgba(31, 42, 68, 0.03);
+    --shadow-md: 0 4px 16px rgba(31, 42, 68, 0.08), 0 2px 4px rgba(31, 42, 68, 0.04);
+    --shadow-lg: 0 16px 40px rgba(31, 42, 68, 0.12), 0 4px 8px rgba(31, 42, 68, 0.05);
+    --shadow-glow: 0 0 0 4px rgba(22, 172, 227, 0.12);
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 14px;
+    --radius-xl: 20px;
+    /* V14 — 그라디언트 */
+    --grad-hero: linear-gradient(135deg, #1F2A44 0%, #2d3a5c 50%, #16ACE3 200%);
+    --grad-blue: linear-gradient(135deg, #16ACE3 0%, #0c7fa8 100%);
+    --grad-violet: linear-gradient(135deg, #7c5cff 0%, #5b3ad9 100%);
+    --grad-mint: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    --grad-coral: linear-gradient(135deg, #ff6b6b 0%, #e11d48 100%);
+    --grad-amber: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    --grad-aurora: linear-gradient(135deg, #16ACE3 0%, #7c5cff 50%, #ec4899 100%);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); font-feature-settings: 'ss06', 'tnum'; -webkit-font-smoothing: antialiased; line-height: 1.5; height: 100%; overflow: hidden; }
@@ -134,25 +160,41 @@
   .card-body { padding: 20px; }
   .card-pad { padding: 24px; }
 
-  .dash-hero { background: linear-gradient(135deg, var(--everon-dark) 0%, var(--everon-dark-soft) 100%); color: white; border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 20px; position: relative; overflow: hidden; }
-  .dash-hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, rgba(22,172,227,0.3) 0%, transparent 70%); }
-  .dash-hero-label { font-size: 11px; font-weight: 700; opacity: 0.7; letter-spacing: 0.08em; text-transform: uppercase; }
-  .dash-hero-value { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; margin-top: 6px; }
-  .dash-hero-sub { font-size: 13px; opacity: 0.75; margin-top: 4px; }
+  .dash-hero { background: var(--grad-hero); color: white; border-radius: var(--radius-xl); padding: 32px 36px; margin-bottom: 24px; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(31,42,68,0.18); }
+  .dash-hero::before { content: ''; position: absolute; top: -80px; right: -80px; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(22,172,227,0.45) 0%, transparent 65%); pointer-events: none; }
+  .dash-hero::after { content: ''; position: absolute; bottom: -120px; left: -60px; width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,255,0.18) 0%, transparent 70%); pointer-events: none; }
+  .dash-hero > * { position: relative; z-index: 1; }
+  .dash-hero-label { font-size: 11px; font-weight: 700; opacity: 0.65; letter-spacing: 0.12em; text-transform: uppercase; }
+  .dash-hero-value { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; margin-top: 8px; line-height: 1; }
+  .dash-hero-sub { font-size: 13px; opacity: 0.78; margin-top: 8px; font-weight: 500; }
 
-  .dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px 20px; transition: all 0.15s; }
-  .stat-card:hover { border-color: var(--everon-blue); transform: translateY(-2px); box-shadow: var(--shadow-md); }
-  .stat-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; }
-  .stat-value { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-top: 6px; }
+  .dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+  .stat-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--grad-blue); opacity: 0; transition: opacity 0.2s; }
+  .stat-card:hover { border-color: var(--everon-blue); transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .stat-card:hover::after { opacity: 1; }
+  .stat-card.danger:hover::after { background: var(--grad-coral); }
+  .stat-card.warn:hover::after { background: var(--grad-amber); }
+  .stat-card.violet:hover::after { background: var(--grad-violet); }
+  .stat-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .stat-value { font-size: 26px; font-weight: 800; letter-spacing: -0.025em; margin-top: 8px; line-height: 1.1; }
   .stat-value.danger { color: var(--danger); }
   .stat-value.warn { color: var(--warn); }
   .stat-value.ok { color: var(--ok); }
   .stat-value.blue { color: var(--everon-blue); }
-  .stat-sub { font-size: 12px; color: var(--text-soft); margin-top: 4px; }
+  .stat-value.violet { color: var(--accent-violet); }
+  .stat-sub { font-size: 12px; color: var(--text-soft); margin-top: 6px; font-weight: 500; }
 
   .dash-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-  .chart-box { height: 240px; position: relative; }
+  .chart-box { height: 260px; position: relative; }
+
+  /* V14 — 카드 hover 효과 강화 */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xs); transition: box-shadow 0.2s; }
+  .card:hover { box-shadow: var(--shadow-sm); }
+  .card-head { padding: 16px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+  .card-body { padding: 22px; }
+  .card-pad { padding: 24px; }
 
   .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
   .dropzone { border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 28px 20px; background: var(--surface); text-align: center; transition: all 0.2s; cursor: pointer; position: relative; }
@@ -281,6 +323,88 @@
     .upload-grid { grid-template-columns: 1fr; }
     .summary-grid { grid-template-columns: repeat(2, 1fr); }
   }
+
+  /* ═════════════════════════════════════════════════════════
+     V14 신규 컴포넌트 스타일
+     ═════════════════════════════════════════════════════════ */
+
+  /* V14 — 사이드바 검증 이력 (#8) */
+  .nav-sub-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 28px; font-size: 12px; color: var(--text-soft); border-radius: 6px; cursor: pointer; transition: all 0.12s; margin-bottom: 1px; }
+  .nav-sub-item:hover { background: var(--bg); color: var(--text); }
+  .nav-sub-item.active { background: var(--everon-blue-soft); color: var(--everon-blue); font-weight: 600; }
+  .nav-sub-empty { font-size: 11px; color: var(--text-muted); padding: 4px 12px 4px 28px; font-style: italic; }
+
+  /* V14 — 납기일 필터 칩 (#4) */
+  .due-chip-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .due-chip { padding: 5px 11px; font-size: 11px; font-weight: 600; color: var(--text-soft); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .due-chip:hover { border-color: var(--everon-blue); color: var(--everon-blue); }
+  .due-chip.active { background: var(--grad-blue); color: white; border-color: var(--everon-blue); box-shadow: 0 2px 6px rgba(22,172,227,0.25); }
+
+  /* V14 — 고객 메모 박스 (#7) */
+  .memo-box { background: linear-gradient(135deg, #fffceb 0%, #fef3c7 100%); border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 14px 16px; margin: 14px 0; position: relative; }
+  .memo-box::before { content: '📝'; position: absolute; top: 12px; left: 14px; font-size: 16px; }
+  .memo-box-content { padding-left: 28px; }
+  .memo-box-label { font-size: 10px; font-weight: 700; color: #92400e; letter-spacing: 0.06em; text-transform: uppercase; }
+  .memo-box-text { font-size: 13px; color: #713f12; margin-top: 4px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .memo-box-meta { font-size: 11px; color: #92400e; opacity: 0.7; margin-top: 6px; }
+  .memo-edit-area { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; padding: 14px; background: var(--surface-alt); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); }
+  .memo-edit-area label { font-size: 11px; font-weight: 700; color: var(--text-soft); letter-spacing: 0.04em; text-transform: uppercase; }
+  .memo-edit-area textarea { width: 100%; min-height: 60px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; transition: all 0.15s; }
+  .memo-edit-area textarea:focus { outline: none; border-color: var(--everon-blue); box-shadow: var(--shadow-glow); }
+  .memo-edit-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* V14 — 해결완료 버튼 & 배지 (#9) */
+  .resolve-btn { padding: 5px 12px; font-size: 11px; font-weight: 700; color: var(--ok); background: var(--ok-bg); border: 1px solid #a7f3d0; border-radius: 6px; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px; }
+  .resolve-btn:hover { background: var(--ok); color: white; border-color: var(--ok); transform: translateY(-1px); }
+  .resolve-btn.resolved { background: var(--ok); color: white; border-color: var(--ok); }
+  .resolve-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: var(--ok-bg); color: var(--ok); border: 1px solid #a7f3d0; letter-spacing: 0.02em; }
+  .resolve-badge.prior { background: var(--accent-amber-soft); color: #92400e; border-color: #fde68a; }
+  .resolve-badge.prior::before { content: '⚠️'; }
+
+  /* V14 — 관제 미관리 트랙 카드 (#1) */
+  .untracked-banner { background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border: 1px solid #fecdd3; border-radius: var(--radius-lg); padding: 18px 22px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .untracked-banner-left { display: flex; align-items: center; gap: 14px; }
+  .untracked-banner-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--grad-coral); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(255,107,107,0.3); }
+  .untracked-banner-title { font-size: 15px; font-weight: 700; color: #991b1b; }
+  .untracked-banner-sub { font-size: 12px; color: #7f1d1d; margin-top: 2px; }
+
+  /* V14 — 해결완료 리스트 탭 (#9) */
+  .resolved-list-row { display: grid; grid-template-columns: 110px 130px 1fr 110px 110px 110px; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: center; font-size: 13px; transition: background 0.15s; }
+  .resolved-list-row:hover { background: var(--surface-alt); }
+  .resolved-list-row.head { background: var(--bg); font-size: 10px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .resolved-amount { font-family: 'SF Mono', Menlo, monospace; font-weight: 700; color: var(--ok); }
+
+  /* V14 — 차트 카드 헤더 강화 */
+  .chart-meta { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .chart-meta-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* V14 — 사이드바 그룹 디자인 */
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); }
+  .nav-group-title { font-size: 10px; font-weight: 800; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 12px 8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text-soft); cursor: pointer; transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 2px; position: relative; }
+  .nav-item:hover { background: var(--bg); color: var(--text); transform: translateX(2px); }
+  .nav-item.active { background: var(--everon-blue-soft); color: var(--everon-blue); font-weight: 700; }
+  .nav-item.active::before { content: ''; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 3px; background: var(--grad-blue); border-radius: 0 3px 3px 0; }
+  .nav-badge.violet { background: var(--accent-violet); color: white; }
+  .nav-badge.ok { background: var(--ok); color: white; }
+
+  /* V14 — 깔끔한 inline 작은 액션 */
+  .mini-link { font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: all 0.12s; }
+  .mini-link:hover { background: var(--bg); color: var(--text); }
+
+  /* V14 — 입체감 있는 issue row */
+  .issue-row { transition: background 0.15s, transform 0.15s; }
+  .issue-row:hover { transform: translateX(1px); }
+
+  /* V14 — 로딩 페이지 진입 애니메이션 */
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .view { animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  /* V14 — 스크롤바 한층 부드럽게 */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #d0d7e0; border-radius: 8px; transition: background 0.15s; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--everon-blue); }
+  ::-webkit-scrollbar-track { background: transparent; }
 </style>
 </head>
 <body>
@@ -289,12 +413,12 @@
   <div class="login-card">
     <div class="everon-logo-img login-logo-img" aria-label="에버온"></div>
     <div class="login-title">전기요금 검증 시스템</div>
-    <div class="login-sub">에버온 전략기획실 내부전용 · V13</div>
+    <div class="login-sub">에버온 전략기획실 내부전용 · V15</div>
     <div class="login-field"><label>아이디</label><input type="text" id="loginId" autocomplete="username"></div>
     <div class="login-field"><label>비밀번호</label><input type="password" id="loginPw" autocomplete="current-password" onkeydown="if(event.key==='Enter') tryLogin()"></div>
     <button class="login-btn" onclick="tryLogin()">로그인</button>
     <div class="login-err" id="loginErr"></div>
-    <div class="login-foot">© 에버온 전략기획실 · 내부 전용 · V13</div>
+    <div class="login-foot">© 에버온 전략기획실 · 내부 전용 · V15</div>
   </div>
 </div>
 
@@ -302,7 +426,7 @@
   <div class="topbar">
     <div class="topbar-left">
       <div class="everon-logo-img topbar-logo-img" onclick="navigate('dashboard')" title="대시보드로 이동" aria-label="에버온 홈"></div>
-      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V13</span></div>
+      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V15</span></div>
     </div>
     <div class="topbar-right">
       <span class="topbar-user" id="topbarUser">everon</span>
@@ -328,11 +452,25 @@
         <div class="nav-item" data-view="cat-contract" onclick="navigate('cat-contract')"><span class="nav-icon">🔌</span><span>계약 적정성</span><span class="nav-badge zero" id="badge-contract">0</span></div>
         <div class="nav-item" data-view="cat-missing" onclick="navigate('cat-missing')"><span class="nav-icon">🔁</span><span>중복 · 누락</span><span class="nav-badge zero" id="badge-missing">0</span></div>
         <div class="nav-item" data-view="surcharges" onclick="navigate('surcharges')"><span class="nav-icon">⚠️</span><span>초과사용부가금</span><span class="nav-badge zero" id="badge-surcharges">0</span></div>
+        <!-- V14 — 관제 미관리 트랙 (#1) -->
+        <div class="nav-item" data-view="untracked" onclick="navigate('untracked')"><span class="nav-icon">📡</span><span>관제 미관리</span><span class="nav-badge zero" id="badge-untracked">0</span></div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">트래킹</div>
+        <!-- V14 — 해결완료 리스트 (#9) -->
+        <div class="nav-item" data-view="resolved" onclick="navigate('resolved')"><span class="nav-icon">🎯</span><span>해결완료 리스트</span><span class="nav-badge zero ok" id="badge-resolved">0</span></div>
       </div>
       <div class="nav-group">
         <div class="nav-group-title">인사이트</div>
         <div class="nav-item" data-view="utilization" onclick="navigate('utilization')"><span class="nav-icon">📊</span><span>충전기 가동률</span></div>
         <div class="nav-item" data-view="refunds" onclick="navigate('refunds')"><span class="nav-icon">💸</span><span>환급 추적</span></div>
+      </div>
+      <!-- V14 — 검증 이력 사이드바 (#8) -->
+      <div class="nav-group" id="historySidebar">
+        <div class="nav-group-title">📅 검증 이력</div>
+        <div id="historySidebarList">
+          <div class="nav-sub-empty">검증을 실행하면 여기에 표시됩니다</div>
+        </div>
       </div>
     </aside>
 
@@ -363,12 +501,29 @@
           <div class="dash-hero-sub" id="heroSub">아직 데이터 없음</div>
         </div>
 
-        <!-- V12 — 4개 카드: 기본요금 과다 / 전력요금 상이 / 환급예상 / 사용량 -->
+        <!-- V12 — 4개 카드: 기본요금 과다 / 전력요금 상이 / 환급예상 / 사용량 (V14 색상 강화) -->
+        <!-- V15 #3 — 환급예상 카드를 3분할: 신뢰 / 확인필요 / 미관리(B등급) -->
         <div class="dash-grid">
-          <div class="stat-card"><div class="stat-label">기본요금 과다청구</div><div class="stat-value danger" id="ds-crit">0건</div><div class="stat-sub" id="ds-crit-sub">-</div></div>
-          <div class="stat-card"><div class="stat-label">전력요금 상이</div><div class="stat-value warn" id="ds-warn">0건</div><div class="stat-sub" id="ds-warn-sub">-</div></div>
-          <div class="stat-card"><div class="stat-label">환급 예상금</div><div class="stat-value blue" id="ds-refund">₩0</div><div class="stat-sub" id="ds-refund-sub">조회 기간 기준</div></div>
+          <div class="stat-card danger"><div class="stat-label">기본요금 과다청구</div><div class="stat-value danger" id="ds-crit">0건</div><div class="stat-sub" id="ds-crit-sub">-</div></div>
+          <div class="stat-card violet" style="border-left:3px solid var(--accent-violet);">
+            <div class="stat-label">🟢 신뢰 환급 추정액</div>
+            <div class="stat-value blue" id="ds-refund-trusted">₩0</div>
+            <div class="stat-sub" id="ds-refund-trusted-sub">S/A등급, 비율·금액 정상</div>
+          </div>
+          <div class="stat-card warn" style="border-left:3px solid var(--warn);">
+            <div class="stat-label">🟡 확인 필요 금액</div>
+            <div class="stat-value warn" id="ds-refund-review">₩0</div>
+            <div class="stat-sub" id="ds-refund-review-sub">비율 과다·고액 차이</div>
+          </div>
           <div class="stat-card"><div class="stat-label">사용량 (한전 / 관제)</div><div class="stat-value" id="ds-usage" style="font-size:22px;">—</div><div class="stat-sub" id="ds-usage-sub">급속 제외 · MWh</div></div>
+        </div>
+
+        <!-- V15 #3 — 보조 KPI 한 줄: 전체 후보, B등급 제외, 가산금/초과요금 -->
+        <div class="dash-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px;">
+          <div class="stat-card"><div class="stat-label">📊 전체 환급 후보 (참고)</div><div class="stat-value" id="ds-refund-total" style="font-size:18px;color:var(--text-soft);">₩0</div><div class="stat-sub">룰상 잡힌 전체 차이금액</div></div>
+          <div class="stat-card"><div class="stat-label">⚪ B등급 제외 금액</div><div class="stat-value" id="ds-refund-excluded" style="font-size:18px;color:var(--text-muted);">₩0</div><div class="stat-sub">기간 불일치로 계산 보류</div></div>
+          <div class="stat-card warn"><div class="stat-label">⚠️ 전력요금 상이</div><div class="stat-value warn" id="ds-warn">0건</div><div class="stat-sub" id="ds-warn-sub">-</div></div>
+          <div class="stat-card"><div class="stat-label">💰 가산금 + 초과요금</div><div class="stat-value violet" id="ds-extras" style="font-size:18px;">₩0</div><div class="stat-sub" id="ds-extras-sub">부수 회수액</div></div>
         </div>
 
         <div class="dash-row">
@@ -540,6 +695,82 @@
 
         <div id="surchargeSummary"></div>
         <div id="surchargeList"></div>
+      </div>
+
+      <!-- V14 — 관제 미관리 트랙 (#1) -->
+      <div class="view" id="view-untracked" style="display:none;">
+        <div class="page-title">📡 관제 미관리 충전소</div>
+        <div class="page-sub">한전 청구는 발생하는데 우리 모니터링 망에 없는 자산. 관리 대상으로 추적 필요.</div>
+
+        <div class="untracked-banner">
+          <div class="untracked-banner-left">
+            <div class="untracked-banner-icon">⚠️</div>
+            <div>
+              <div class="untracked-banner-title">관제 시스템 외부 자산 발견</div>
+              <div class="untracked-banner-sub">빌코리아 청구 데이터에는 있으나 관제 데이터에서 매칭되지 않는 충전소입니다.</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:#7f1d1d;font-weight:600;">미관리 자산</div>
+            <div style="font-size:24px;font-weight:800;color:#991b1b;" id="untrackedCount">0건</div>
+          </div>
+        </div>
+
+        <div class="search-bar" style="background:var(--surface);">
+          <input type="text" id="untrackedSearch" placeholder="🔍 고객번호 · 주소 · 사업소 검색" oninput="renderUntracked()">
+          <span style="font-size:11px;color:var(--text-muted);font-weight:600;margin-left:4px;">계약:</span>
+          <button class="filter-btn" data-volt="all" onclick="setUntrackedFilter('volt','all')" id="untrackVoltAll">전체</button>
+          <button class="filter-btn" data-volt="high" onclick="setUntrackedFilter('volt','high')" id="untrackVoltHigh">고압</button>
+          <button class="filter-btn" data-volt="low" onclick="setUntrackedFilter('volt','low')" id="untrackVoltLow">저압</button>
+          <span style="flex:1;"></span>
+          <button class="btn btn-outline btn-sm" onclick="exportUntrackedCSV()">📄 CSV</button>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="card-title">미관리 충전소 리스트</span>
+              <span class="tag" style="background:var(--accent-coral-soft);color:#991b1b;border:1px solid #fecdd3;" id="untrackedTagCount">0건</span>
+            </div>
+          </div>
+          <div id="untrackedBody" style="max-height: 70vh; overflow-y: auto;"></div>
+        </div>
+      </div>
+
+      <!-- V14 — 해결완료 리스트 (#9) -->
+      <div class="view" id="view-resolved" style="display:none;">
+        <div class="page-title">🎯 해결완료 리스트</div>
+        <div class="page-sub">처리 완료된 이슈 누적 조회. 한전 클레임/조정 완료된 건들을 트래킹합니다.</div>
+
+        <div class="dash-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="stat-card"><div class="stat-label">총 해결 건수</div><div class="stat-value ok" id="rs-cnt">0건</div><div class="stat-sub" id="rs-cnt-sub">전체 누적</div></div>
+          <div class="stat-card"><div class="stat-label">누적 회수액</div><div class="stat-value blue" id="rs-amt">₩0</div><div class="stat-sub">환급 처리 누적</div></div>
+          <div class="stat-card"><div class="stat-label">최근 30일</div><div class="stat-value violet" id="rs-recent">0건</div><div class="stat-sub" id="rs-recent-sub">최근 처리량</div></div>
+        </div>
+
+        <div class="search-bar" style="background:var(--surface);">
+          <input type="text" id="resolvedSearch" placeholder="🔍 고객번호 · 검증코드 · 메모 검색" oninput="renderResolvedList()">
+          <span style="font-size:11px;color:var(--text-muted);font-weight:600;margin-left:4px;">기간:</span>
+          <select id="resolvedPeriodFilter" onchange="renderResolvedList()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;">
+            <option value="all">전체</option>
+            <option value="30">최근 30일</option>
+            <option value="90">최근 3개월</option>
+            <option value="180">최근 6개월</option>
+            <option value="365">최근 1년</option>
+          </select>
+          <span style="flex:1;"></span>
+          <button class="btn btn-outline btn-sm" onclick="exportResolvedXLSX()">📥 Excel</button>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="card-title">해결완료 이력</span>
+              <span class="tag ok" id="resolvedHeadCount">0건</span>
+            </div>
+          </div>
+          <div id="resolvedBody" style="max-height: 70vh; overflow-y: auto;"></div>
+        </div>
       </div>
 
     </div>
@@ -741,6 +972,7 @@ function shouldSkipUsageCheck(m) {
 
 // ═══════════════════════════════════════════════════════════════
 //  V5 — 전기차 충전 전력요금 단가표 (선택요금 I/II/III/IV × 계절 × 시간대)
+//  V15 #1 — tariff_master로 확장: 적용시작일 기반 버전 관리
 // ═══════════════════════════════════════════════════════════════
 // 진우 업로드 요금표 기준. 톱니바퀴에서 수정 가능.
 // 구조: settings.tariff[voltage][selectType][season][band]
@@ -764,9 +996,105 @@ const DEFAULT_TARIFF = {
     IV:  { summer: { all: 137.4 }, spring_fall: { all: 91.0 }, winter: { all: 127.7 } },
   },
 };
+
+// V15 #1 — tariff_master: 적용시작일 기반 다버전 단가표
+// 각 항목은 effectiveFrom (YYYYMMDD)부터 적용. 기간 분할 시 자동으로 적합한 버전 선택.
+//
+// 26.04.16 ─ 2026년 4월 16일 계절·시간대별 요금 개편 시행
+// 26.04.18 ─ 전기차 충전 전력량요금 봄·가을 주말·공휴일 11~14시 50% 할인 시작
+// 26.06.01 ─ 여름철 진입 (요금표 자체는 동일하지만 계절 전환점)
+//
+// note: 26.04.16 이후 단가는 진우가 한전 고시 받으면 톱니바퀴에서 수정 — 현재는 V14 기존 단가 유지를 기본값으로
+const DEFAULT_TARIFF_MASTER = [
+  {
+    effectiveFrom: '20240101',                    // 2024년 이전 청구건 모두 이 단가로 fallback
+    effectiveTo: '20260415',                      // 2026.04.15 까지 적용
+    label: '~2026.04.15 (개편 전)',
+    tariff: JSON.parse(JSON.stringify(DEFAULT_TARIFF))
+  },
+  {
+    effectiveFrom: '20260416',                    // 2026.04.16 ~ : 계절·시간대별 요금 개편
+    effectiveTo: '99991231',
+    label: '2026.04.16~ (개편 후 — 진우 확정 후 단가 입력 필요)',
+    // 현재는 기존 단가 그대로 placeholder로 둠. 실제 한전 고시 받으면 톱니바퀴에서 수정
+    tariff: JSON.parse(JSON.stringify(DEFAULT_TARIFF)),
+    // V15 — 26.04.18부터 봄·가을 주말·공휴일 11~14시 50% 할인 (구현은 V16 후보)
+    discount_evWeekendSpringFallNoon: { from: '20260418', rate: 0.5, applies: 'spring_fall', dow: ['sat', 'sun', 'holiday'], hourFrom: 11, hourTo: 14 }
+  }
+];
+
 // DEFAULT_SETTINGS에도 반영 (초기값으로 복사)
 DEFAULT_SETTINGS.tariff = JSON.parse(JSON.stringify(DEFAULT_TARIFF));
+DEFAULT_SETTINGS.tariffMaster = JSON.parse(JSON.stringify(DEFAULT_TARIFF_MASTER));  // V15 #1
 if (!settings.tariff) settings.tariff = JSON.parse(JSON.stringify(DEFAULT_TARIFF));
+if (!settings.tariffMaster) settings.tariffMaster = JSON.parse(JSON.stringify(DEFAULT_TARIFF_MASTER));
+
+// V15 #1 — 특정 날짜에 적용되는 tariff 버전 가져오기
+function getTariffForDate(yyyymmdd) {
+  const master = settings.tariffMaster || DEFAULT_TARIFF_MASTER;
+  if (!yyyymmdd) return settings.tariff || DEFAULT_TARIFF;
+  // YYYYMMDD 형태로 정규화 (사용시작이 'YYYY-MM-DD' 형태일 수도 있음)
+  const d = String(yyyymmdd).replace(/[^\d]/g, '');
+  const target = d.length >= 8 ? d.substring(0, 8) : (d.length === 6 ? d + '01' : '');
+  if (!target) return settings.tariff || DEFAULT_TARIFF;
+  for (const v of master) {
+    if (target >= v.effectiveFrom && target <= (v.effectiveTo || '99991231')) {
+      return v.tariff;
+    }
+  }
+  return settings.tariff || DEFAULT_TARIFF;  // fallback
+}
+
+// V15 #1 — 청구기간을 tariff 버전 경계에서 분할
+// 입력: useStart (YYYYMMDD or YYYY-MM-DD), useEnd
+// 반환: [{from, to, days, tariff, label}, ...] — 각 구간별 적용 단가
+function splitBillPeriodByTariff(useStart, useEnd) {
+  const norm = (s) => String(s || '').replace(/[^\d]/g, '').substring(0, 8);
+  const start = norm(useStart);
+  const end = norm(useEnd);
+  if (!start || !end || start.length !== 8 || end.length !== 8 || start > end) {
+    return [{ from: start, to: end, days: 0, tariff: settings.tariff, label: '단가 산정 불가' }];
+  }
+  const master = (settings.tariffMaster || DEFAULT_TARIFF_MASTER).slice().sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+  const segments = [];
+  let cursor = start;
+  for (const v of master) {
+    const vFrom = v.effectiveFrom;
+    const vTo = v.effectiveTo || '99991231';
+    // 이 버전과 청구기간의 교집합
+    if (vTo < cursor) continue;
+    if (vFrom > end) break;
+    const segFrom = cursor > vFrom ? cursor : vFrom;
+    const segTo = end < vTo ? end : vTo;
+    if (segFrom > segTo) continue;
+    const days = daysBetween(segFrom, segTo) + 1;  // 양 끝 포함
+    segments.push({
+      from: segFrom,
+      to: segTo,
+      days: days,
+      tariff: v.tariff,
+      label: v.label || ''
+    });
+    cursor = nextDay(segTo);
+    if (cursor > end) break;
+  }
+  if (segments.length === 0) {
+    return [{ from: start, to: end, days: daysBetween(start, end) + 1, tariff: settings.tariff, label: '버전 매칭 실패 — 현재 단가 사용' }];
+  }
+  return segments;
+}
+
+// V15 — 두 YYYYMMDD 사이 일수 (양 끝 미포함, +1 하면 양끝포함)
+function daysBetween(yyyymmdd1, yyyymmdd2) {
+  const d1 = new Date(+yyyymmdd1.substring(0,4), +yyyymmdd1.substring(4,6)-1, +yyyymmdd1.substring(6,8));
+  const d2 = new Date(+yyyymmdd2.substring(0,4), +yyyymmdd2.substring(4,6)-1, +yyyymmdd2.substring(6,8));
+  return Math.round((d2 - d1) / 86400000);
+}
+function nextDay(yyyymmdd) {
+  const d = new Date(+yyyymmdd.substring(0,4), +yyyymmdd.substring(4,6)-1, +yyyymmdd.substring(6,8));
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
 
 // V5 — 청구월 → 계절 판별
 function getSeason(yyyymm) {
@@ -830,6 +1158,21 @@ db.version(1).stores({
   validations: '&yyyymm, validatedAt',
   runs: '++id, runAt',
   config: '&key'
+});
+// V14 — DB v2: 관제 미관리 / 해결완료 / 고객 메모 store 추가
+db.version(2).stores({
+  months: '&yyyymm, uploadedAt',
+  bills: '[yyyymm+custNo], yyyymm, custNo',
+  meters: '[yyyymm+custNo], yyyymm, custNo',
+  validations: '&yyyymm, validatedAt',
+  runs: '++id, runAt',
+  config: '&key',
+  // V14 #1 — 관제에 매칭되지 않은 빌코리아 청구건 (관제 미관리 자산)
+  untracked: '[yyyymm+custNo], yyyymm, custNo, 전압구분, 관할사업소',
+  // V14 #9 — 해결완료 트래킹 (key: yyyymm + custNo + 검증코드)
+  resolved: '&id, custNo, code, resolvedAt, yyyymm',
+  // V14 #7 — 고객 메모
+  customerNotes: '&custNo, updatedAt'
 });
 // 구 V2 DB도 열어두기 (마이그레이션용)
 const dbV2 = new Dexie('EveronBillChecker');
@@ -922,6 +1265,10 @@ function navigate(view) {
   if (view.startsWith('cat-')) {
     $('#view-cat').style.display = '';
     renderCategory(view);
+  } else if (view.startsWith('history-')) {
+    // V14 #8 — 검증 이력 사이드바에서 클릭 시 해당 월 로드
+    const ym = view.replace('history-', '');
+    loadHistoryMonth(ym);
   } else {
     const el = $('#view-' + view);
     if (el) el.style.display = '';
@@ -929,6 +1276,8 @@ function navigate(view) {
     if (view === 'utilization') renderUtilization();
     if (view === 'refunds') renderRefundsView();  // #18
     if (view === 'surcharges') renderSurchargesView();  // V11
+    if (view === 'untracked') renderUntracked();   // V14 #1
+    if (view === 'resolved') renderResolvedList(); // V14 #9
   }
 }
 
@@ -1044,18 +1393,30 @@ async function renderDashboard() {
     const data = months.map(m => m.totalAmount);
     $('#trendRange').textContent = `${months[0].yyyymm} ~ ${months[months.length-1].yyyymm}`;
     if (chartTrend) chartTrend.destroy();
+    // V14 — 차트 디자인 업그레이드: 그라디언트 + 부드러운 폰트
+    const ctxTrend = $('#chartTrend').getContext('2d');
+    const gradTrend = ctxTrend.createLinearGradient(0, 0, 0, 240);
+    gradTrend.addColorStop(0, 'rgba(22,172,227,0.95)');
+    gradTrend.addColorStop(1, 'rgba(22,172,227,0.45)');
     chartTrend = new Chart($('#chartTrend'), {
       type: 'bar',
-      data: { labels, datasets: [{ label: '청구액', data, backgroundColor: 'rgba(22,172,227,0.8)', borderRadius: 6 }] },
+      data: { labels, datasets: [{ label: '청구액', data, backgroundColor: gradTrend, borderRadius: 8, borderSkipped: false, hoverBackgroundColor: 'rgba(12,127,168,1)' }] },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: (ctx) => fmtMoneyShort(ctx.parsed.y) } }
+          tooltip: {
+            backgroundColor: 'rgba(31,42,68,0.95)', titleFont: { size: 13, weight: 'bold' }, bodyFont: { size: 12 },
+            padding: 12, cornerRadius: 8, displayColors: false,
+            callbacks: { label: (ctx) => fmtMoneyShort(ctx.parsed.y) }
+          }
         },
         scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: '#5c6680' } },
           y: {
+            grid: { color: 'rgba(229,233,240,0.6)', drawBorder: false },
             ticks: {
+              font: { size: 11 }, color: '#9aa4b8',
               callback: v => {
                 if (v >= 100000000) return (v/100000000).toFixed(1) + '억';
                 if (v >= 10000) return (v/10000).toFixed(0) + '만';
@@ -1100,22 +1461,32 @@ async function renderDashboard() {
       refundAmounts.push(total);
     }
     if (chartIssueTrend) chartIssueTrend.destroy();
+    // V14 — 환급액 차트는 violet 그라디언트로 차별화
+    const ctxRefund = $('#chartIssueTrend').getContext('2d');
+    const gradRefund = ctxRefund.createLinearGradient(0, 0, 0, 240);
+    gradRefund.addColorStop(0, 'rgba(124,92,255,0.92)');
+    gradRefund.addColorStop(1, 'rgba(124,92,255,0.4)');
     chartIssueTrend = new Chart($('#chartIssueTrend'), {
       type: 'bar',
       data: {
         labels,
         datasets: [
-          { label: '월별 이상 전력 요금', data: refundAmounts, backgroundColor: 'rgba(22,172,227,0.75)', borderRadius: 6 },
+          { label: '월별 이상 전력 요금', data: refundAmounts, backgroundColor: gradRefund, borderRadius: 8, borderSkipped: false, hoverBackgroundColor: 'rgba(91,58,217,1)' },
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: (ctx) => fmtMoneyShort(ctx.parsed.y) } }
+          tooltip: {
+            backgroundColor: 'rgba(31,42,68,0.95)', titleFont: { size: 13, weight: 'bold' }, bodyFont: { size: 12 },
+            padding: 12, cornerRadius: 8, displayColors: false,
+            callbacks: { label: (ctx) => fmtMoneyShort(ctx.parsed.y) }
+          }
         },
         scales: {
-          y: { beginAtZero: true, ticks: { callback: v => v >= 100000000 ? (v/100000000).toFixed(1)+'억' : v >= 10000 ? (v/10000).toFixed(0)+'만' : v } }
+          x: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: '#5c6680' } },
+          y: { beginAtZero: true, grid: { color: 'rgba(229,233,240,0.6)', drawBorder: false }, ticks: { font: { size: 11 }, color: '#9aa4b8', callback: v => v >= 100000000 ? (v/100000000).toFixed(1)+'억' : v >= 10000 ? (v/10000).toFixed(0)+'만' : v } }
         }
       }
     });
@@ -1139,21 +1510,50 @@ async function renderDashboard() {
       else buckets['과밀(800+)']++;
     }
     if (chartUtil) chartUtil.destroy();
+    // V14 — 도넛 차트 색상 팔레트 업그레이드 + 부드러운 보더
     chartUtil = new Chart($('#chartUtil'), {
       type: 'doughnut',
       data: {
         labels: Object.keys(buckets),
-        datasets: [{ data: Object.values(buckets), backgroundColor: ['#cbd5e1', '#fbbf24', '#60a5fa', '#34d399', '#f472b6'] }]
+        datasets: [{
+          data: Object.values(buckets),
+          backgroundColor: ['#cfd6e0', '#f59e0b', '#16ACE3', '#14b8a6', '#ec4899'],
+          borderWidth: 3,
+          borderColor: '#ffffff',
+          hoverOffset: 8,
+        }]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } } }
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              font: { size: 11, weight: '500' },
+              color: '#5c6680',
+              padding: 10,
+              usePointStyle: true,
+              pointStyle: 'circle',
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(31,42,68,0.95)', padding: 12, cornerRadius: 8, displayColors: true,
+            titleFont: { size: 13, weight: 'bold' }, bodyFont: { size: 12 },
+          }
+        }
+      }
     });
   }
 
   // V12 — 환급 예상금: A2/A2p/A3 (기본요금 과다) + A5 (사용량 과다) + 가산금 + 초과요금
+  // V15 #3 — 환급액 3분할 집계: trusted / review / excluded
   const REFUND_CODES = new Set(['A2', 'A2p', 'A3', 'A5']);
 
-  let cardBaseCnt = 0, cardBaseAmt = 0;    // 기본요금 (A2/A2p/A3)
-  let cardEnergyCnt = 0, cardEnergyAmt = 0; // 사용량 환급 (A5)
+  let cardBaseCnt = 0, cardBaseAmt = 0;    // 기본요금 (A2/A2p/A3) - 항상 신뢰
+  let cardEnergyCnt = 0, cardEnergyAmt = 0; // 사용량 환급 (A5) — V15: trusted만
+  let cardEnergyReviewCnt = 0, cardEnergyReviewAmt = 0;     // V15 — A5 review (확인필요)
+  let cardEnergyExcludedCnt = 0, cardEnergyExcludedAmt = 0; // V15 — A5 excluded (B등급)
   let cardBaseAnomalyCnt = 0;  // A2r
   let cardUsageKepco = 0, cardUsageMeter = 0;
   let cardSurcharge = 0;       // 가산금
@@ -1182,11 +1582,19 @@ async function renderDashboard() {
             cardBaseCnt++;
             cardBaseAmt += iss.diff;
           } else if (iss.code === 'A5') {
-            // V13 — A5는 신뢰도 높은 건만 대시보드 집계 (dashTrusted)
-            // 나머지는 엑셀·탭에서 전체 확인 가능
-            if (iss.dashTrusted) {
+            // V15 #3 — refundTier 기반 분류
+            // V14까지: dashTrusted boolean → V15: refundTier ('trusted'/'review'/'excluded')
+            // 하위호환: refundTier 없으면 dashTrusted로 판단
+            const tier = iss.refundTier || (iss.dashTrusted ? 'trusted' : 'review');
+            if (tier === 'trusted') {
               cardEnergyCnt++;
               cardEnergyAmt += iss.diff;
+            } else if (tier === 'review') {
+              cardEnergyReviewCnt++;
+              cardEnergyReviewAmt += iss.diff;
+            } else if (tier === 'excluded') {
+              cardEnergyExcludedCnt++;
+              cardEnergyExcludedAmt += iss.diff;
             }
           }
         }
@@ -1194,19 +1602,54 @@ async function renderDashboard() {
     }
   }
 
-  // V12 — 총 환급: 기본요금 + 사용량 환급 + 가산금 + 초과요금
-  const totalRefund = cardBaseAmt + cardEnergyAmt + cardSurcharge + cardExcess;
-  const totalRefundCount = cardBaseCnt + cardEnergyCnt + cardExcessCnt;
+  // V15 #3 — KPI 분할
+  // 신뢰 환급 추정액 = 기본요금 환급 + A5 trusted + 가산금 + 초과요금 (실제 회수 가능)
+  // 확인 필요 = A5 review (비율 과다, 고액)
+  // 제외 = A5 excluded (B등급, 기간 불일치)
+  const trustedRefund = cardBaseAmt + cardEnergyAmt + cardSurcharge + cardExcess;
+  const trustedCount = cardBaseCnt + cardEnergyCnt + cardExcessCnt;
+  const reviewRefund = cardEnergyReviewAmt;
+  const reviewCount = cardEnergyReviewCnt;
+  const excludedRefund = cardEnergyExcludedAmt;
+  const excludedCount = cardEnergyExcludedCnt;
+  const totalRefund = trustedRefund + reviewRefund + excludedRefund;  // 전체 후보
   const periodMonths = Math.max(1, issueMonths.length);
-  const isAnnual = periodMonths !== 12;  // V12 — 12개월 아닐 때만 연환산
-  const annualRefund = isAnnual ? totalRefund * (12 / periodMonths) : totalRefund;
-  const annualRefundCount = isAnnual ? Math.round(totalRefundCount * (12 / periodMonths)) : totalRefundCount;
+  const isAnnual = periodMonths !== 12;
+  const annualTrusted = isAnnual ? trustedRefund * (12 / periodMonths) : trustedRefund;
 
+  // 기존 카드 (기본요금 과다)
   if ($('#ds-crit')) $('#ds-crit').textContent = fmt(cardBaseCnt) + '건';
   if ($('#ds-crit-sub')) $('#ds-crit-sub').innerHTML = cardBaseAmt > 0 ? fmtMoneyShort(cardBaseAmt) : '-';
-  if ($('#ds-warn')) $('#ds-warn').textContent = fmt(cardEnergyCnt) + '건';
-  if ($('#ds-warn-sub')) $('#ds-warn-sub').innerHTML = cardEnergyAmt > 0 ? fmtMoneyShort(cardEnergyAmt) : '-';
-  if ($('#ds-refund')) $('#ds-refund').innerHTML = `${fmtMoneyShort(annualRefund)} <span style="font-size:13px;color:var(--text-muted);font-weight:500;">(${fmt(annualRefundCount)}건)</span>`;
+
+  // 전력요금 상이 (A5 review + excluded 합계 건수로 표시)
+  const energyAllCnt = cardEnergyCnt + cardEnergyReviewCnt + cardEnergyExcludedCnt;
+  const energyAllAmt = cardEnergyAmt + cardEnergyReviewAmt + cardEnergyExcludedAmt;
+  if ($('#ds-warn')) $('#ds-warn').textContent = fmt(energyAllCnt) + '건';
+  if ($('#ds-warn-sub')) $('#ds-warn-sub').innerHTML = energyAllAmt > 0 ? fmtMoneyShort(energyAllAmt) + ` <span style="color:var(--text-muted);">전체</span>` : '-';
+
+  // V15 #3 — 신뢰 환급 추정액 (메인 KPI)
+  if ($('#ds-refund-trusted')) $('#ds-refund-trusted').innerHTML = `${fmtMoneyShort(annualTrusted)} <span style="font-size:13px;color:var(--text-muted);font-weight:500;">(${fmt(trustedCount)}건)</span>`;
+  if ($('#ds-refund-trusted-sub')) {
+    const parts = [];
+    if (cardBaseAmt > 0) parts.push(`기본 ${fmtMoneyShort(cardBaseAmt)}`);
+    if (cardEnergyAmt > 0) parts.push(`A5신뢰 ${fmtMoneyShort(cardEnergyAmt)}`);
+    if (cardSurcharge > 0) parts.push(`가산금 ${fmtMoneyShort(cardSurcharge)}`);
+    if (cardExcess > 0) parts.push(`초과 ${fmtMoneyShort(cardExcess)}`);
+    $('#ds-refund-trusted-sub').innerHTML = parts.length > 0 ? parts.join(' · ') : '검증 대기중';
+  }
+
+  // V15 #3 — 확인 필요 금액
+  if ($('#ds-refund-review')) $('#ds-refund-review').innerHTML = `${fmtMoneyShort(reviewRefund)} <span style="font-size:13px;color:var(--text-muted);font-weight:500;">(${fmt(reviewCount)}건)</span>`;
+  if ($('#ds-refund-review-sub')) $('#ds-refund-review-sub').innerHTML = reviewCount > 0 ? `비율 2배 초과 또는 건당 15,000원 초과` : '해당 없음';
+
+  // V15 #3 — 보조 KPI: 전체 후보, B등급 제외, 가산금/초과
+  if ($('#ds-refund-total')) $('#ds-refund-total').innerHTML = fmtMoneyShort(totalRefund);
+  if ($('#ds-refund-excluded')) $('#ds-refund-excluded').innerHTML = `${fmtMoneyShort(excludedRefund)} <span style="font-size:11px;color:var(--text-muted);">(${fmt(excludedCount)}건)</span>`;
+  if ($('#ds-extras')) $('#ds-extras').innerHTML = fmtMoneyShort(cardSurcharge + cardExcess);
+  if ($('#ds-extras-sub')) $('#ds-extras-sub').innerHTML = `가산금 ${fmt(cardSurcharge > 0 ? '...' : 0)} + 초과 ${fmt(cardExcessCnt)}건`;
+
+  // 호환: 기존 V14 ds-refund 가 있을 수 있어서 안전하게 갱신
+  if ($('#ds-refund')) $('#ds-refund').innerHTML = `${fmtMoneyShort(annualTrusted)} <span style="font-size:13px;color:var(--text-muted);font-weight:500;">(${fmt(trustedCount)}건)</span>`;
   if ($('#ds-refund-sub')) {
     const parts = [];
     if (cardBaseAmt > 0) parts.push(`기본 ${fmtMoneyShort(cardBaseAmt)}`);
@@ -1992,6 +2435,9 @@ const BILL_ALIASES = {
   prevPeak: ['전월지침_최'],
   powerFee: ['전력량요금'],
   climateFee: ['기후환경요금'],
+  // V14 — 신규 필드 (#3, #4)
+  dueDate: ['납기일', '납기일자', '납부기한', '납기'],
+  branchOffice: ['관할사업소', '관할 사업소', '사업소', '담당사업소', '관할지점', '담당지점'],
 };
 const METER_ALIASES = {
   custNo: ['고객번호'],
@@ -2090,12 +2536,38 @@ function parseAOA(aoa, workbook, sheetName, origBuffer) {
 function normalizeBillRow(r, m) {
   const g = (k) => m[k] ? r[m[k]] : undefined;
   const billYm = extractYyyymm(g('billYyyymm') || g('useStart'));
+  // V14 — 납기일 추출 (#4): YYYYMMDD 형태로 정규화
+  const dueRaw = g('dueDate');
+  let dueDate = '';
+  let dueDay = 0;  // 일자만 (필터용: 5,10,15,18,20,25, 또는 31=말일)
+  if (dueRaw != null && dueRaw !== '') {
+    const s = String(dueRaw).trim();
+    // YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, YYYYMMDD 등 처리
+    const digits = s.replace(/[^\d]/g, '');
+    if (digits.length === 8) {
+      dueDate = digits;
+      dueDay = parseInt(digits.substring(6, 8), 10) || 0;
+    } else if (digits.length === 6) {
+      // YYYYMM 만 있는 경우 — 무시
+      dueDate = '';
+    }
+  }
+  // V14 — 계약종별에서 고압/저압 판별 (#2)
+  const contractType = String(g('contractType') || '');
+  const voltage = /저압/.test(contractType) ? 'low' : 'high';
+  // V14 — 관할 사업소 (#3)
+  const branchOffice = String(g('branchOffice') || '').trim();
   return {
     _rowIdx: r._rowIdx,
     custNo: normalizeCustNo(g('custNo')),
     billYyyymm: billYm,
     yyyymm: billYm,
-    계약종별: String(g('contractType') || ''),
+    계약종별: contractType,
+    전압구분: voltage,           // V14 — 'low' / 'high' (#2)
+    전압구분라벨: voltage === 'low' ? '저압' : '고압',  // V14 — 표시용
+    관할사업소: branchOffice,    // V14 — (#3)
+    납기일: dueDate,             // V14 — YYYYMMDD (#4)
+    납기일자: dueDay,            // V14 — 일자만 (필터용 1~31, 0=없음)
     주소: String(g('address') || ''),
     계약전력: num(g('contractPower')),
     요금적용전력: num(g('appliedPower')),
@@ -2300,6 +2772,29 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
     calcs.사용량_계산 = timeSum;
     calcs.사용량_식 = '심야+주간+저녁+경부하+중부하+최대부하';
 
+    // V15 #1 — 청구기간 단가 분할 검사: 한 청구기간 안에 단가 변경일이 있으면 안내
+    //   예: 26.04.01 ~ 26.04.30 청구건은 26.04.16 요금개편일이 중간에 걸림
+    //       → 14일은 구단가, 16일은 신단가로 계산해야 정확
+    if (b.사용시작 && b.사용끝) {
+      const segments = splitBillPeriodByTariff(b.사용시작, b.사용끝);
+      calcs.tariffSegments = segments;
+      if (segments.length > 1) {
+        // 둘 이상 구간이면 안내 이슈
+        const segDesc = segments.map(s =>
+          `${s.from.substring(4,6)}.${s.from.substring(6,8)}~${s.to.substring(4,6)}.${s.to.substring(6,8)} (${s.days}일, ${s.label})`
+        ).join(' / ');
+        issues.push({
+          code: 'A0',
+          level: 'info',
+          cat: 'money',
+          col: '청구기간',
+          reason: `청구기간에 단가 변경일 포함 — ${segments.length}개 구간으로 분할 필요`,
+          detail: `V15: ${segDesc}`,
+          tag: 'orange',
+        });
+      }
+    }
+
     // ═════ A1: 시간대합 = 총 사용량 (#20 V4 쉬운 메시지) ═════
     if (timeSum > 0 && Math.abs(timeSum - b.사용량) > 1) {
       const diff = timeSum - b.사용량;
@@ -2365,18 +2860,25 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
     }
 
     // ═════ A3: 기본요금 상한 (V5 정상단가 기준) ═════
+    // V14 #6 — A2가 이미 잡혔고 같은 차이값이면 중복 표기 회피
+    // 케이스: 요금적용전력 == 계약전력 일 때 A2(단가×전력)와 A3(상한 = 계약전력×단가) 결과 동일
     if (b.계약전력 > 0 && b.요금적용전력 <= b.계약전력) {
       const voltage = getVoltage(b.계약종별);
       const stdRate = getStandardBaseRate(voltage);
       const cap = b.계약전력 * stdRate;
       const tol = amtTol(cap);
       if (b.기본요금 > cap + tol) {
-        issues.push({
-          code: 'A3', level: 'critical', cat: 'money', col: '기본요금',
-          reason: `기본요금 상한 초과 (한전: ${fmt(b.기본요금)} / 상한: ${fmt(cap)} / 차: +${fmt(b.기본요금 - cap)})`,
-          detail: `계약전력 ${b.계약전력}kW × 정상단가 ${fmt(stdRate)}원 = 상한 ${fmt(cap)}원`,
-          diff: b.기본요금 - cap,
-        });
+        const a3Diff = b.기본요금 - cap;
+        // V14 #6 — A2/A2p가 이미 같은 diff(±1원 오차)로 들어가 있으면 A3 스킵
+        const dupeA2 = issues.some(i => (i.code === 'A2' || i.code === 'A2p') && typeof i.diff === 'number' && Math.abs(i.diff - a3Diff) < 2);
+        if (!dupeA2) {
+          issues.push({
+            code: 'A3', level: 'critical', cat: 'money', col: '기본요금',
+            reason: `기본요금 상한 초과 (한전: ${fmt(b.기본요금)} / 상한: ${fmt(cap)} / 차: +${fmt(a3Diff)})`,
+            detail: `계약전력 ${b.계약전력}kW × 정상단가 ${fmt(stdRate)}원 = 상한 ${fmt(cap)}원`,
+            diff: a3Diff,
+          });
+        }
       }
     }
 
@@ -2639,16 +3141,28 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
     // ═════ B. 교차검증 (관제) — V6 사용기간 기반 매칭 ═════
     // V6 핵심: 빌 사용시작/사용끝으로 관제 행 정확히 매칭
     //         매칭 실패 시 → 고객번호 fallback → 여전히 없으면 안내 태그
+    // V15 #2 — 매칭 신뢰등급 S/A/B/C 도입
+    //   S: 고객번호 + 사용기간 + 충전소ID(관제 station) 일치  → 환급계산 가능
+    //   A: 고객번호 + 사용기간 일치                            → 환급계산 가능
+    //   B: 고객번호만 일치 (기간 불일치)                        → 환급계산 금지 (참고만)
+    //   C: 한전 청구 有 / 관제 매칭 無                          → 미관리 자산 트랙
     let m = null;
     let matchedBy = 'none';
+    let matchGrade = 'C';  // V15 — 기본 C (매칭 안됨)
     const bPeriodKey = `${b.custNo}|${normalizeDate(b.사용시작)}|${normalizeDate(b.사용끝)}`;
     if (byPeriod[bPeriodKey]) {
       m = byPeriod[bPeriodKey];
       matchedBy = 'period';
+      // V15 — 충전소ID 일치 여부로 S/A 구분 (현재는 station 단위 ID 없음 → 일단 모두 A. 향후 stationName 매칭 추가 시 S 승격)
+      matchGrade = 'A';
     } else if (byCust[b.custNo]) {
       m = byCust[b.custNo];
       matchedBy = 'cust-fallback';
+      matchGrade = 'B';  // V15 — 기간 불일치, 환급계산 제외 대상
     }
+
+    // V15 #2 — 환급액 계산 자격 (S 또는 A 등급만)
+    const canCalculateRefund = (matchGrade === 'S' || matchGrade === 'A');
 
     if (!m && byCust[b.custNo] === undefined) {
       // 관제 데이터 자체에 이 고객번호 없음 — B15 info 표기
@@ -2658,15 +3172,18 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
           reason: `관제 데이터에 해당 고객번호 없음 (사용기간 ${normalizeDate(b.사용시작)} ~ ${normalizeDate(b.사용끝)})`,
           detail: '관제 CSV에 이 고객번호가 없어 사용량 교차검증 불가',
           tag: 'orange',
+          matchGrade: 'C',
         });
       }
     } else if (matchedBy === 'cust-fallback') {
       // 기간은 안 맞지만 같은 고객번호 있음 — B16 info 표기
+      // V15 — B등급 명시: "환급액 계산에서 제외됨" 안내 강화
       issues.push({
         code: 'B16', level: 'info', cat: 'usage', col: '관제매칭',
-        reason: `관제 사용기간 불일치 (빌: ${normalizeDate(b.사용시작)} ~ ${normalizeDate(b.사용끝)} / 관제: ${m.사용시작 || '?'} ~ ${m.사용끝 || '?'})`,
-        detail: '빌코리아 사용기간과 일치하는 관제 행이 없어 고객번호로만 대체 매칭함 — 사용량 수치 신뢰 낮음',
+        reason: `관제 사용기간 불일치 [B등급] (빌: ${normalizeDate(b.사용시작)} ~ ${normalizeDate(b.사용끝)} / 관제: ${m.사용시작 || '?'} ~ ${m.사용끝 || '?'})`,
+        detail: 'V15: B등급(기간 불일치) — 사용량 환급액 자동 계산 제외. 검토 후 수동 판단 필요',
         tag: 'orange',
+        matchGrade: 'B',
       });
     }
 
@@ -2749,14 +3266,37 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
           const ratio = billTotal / meterTotal;
           const dashTrusted = ratio <= 2.0 && totalRefund <= 15000;
 
+          // V15 #2 + #3 — 환급액 3분할 분류
+          //   refundTier: 'trusted'  = S/A등급 + 비율 OK + 금액 OK     → 신뢰 환급
+          //              'review'   = S/A등급이지만 비율/금액 이상치   → 확인 필요
+          //              'excluded' = B등급 (기간 불일치)             → 환급계산 제외
+          let refundTier;
+          if (!canCalculateRefund) {
+            refundTier = 'excluded';   // B등급 — 환급 후보에서 빼기
+          } else if (dashTrusted) {
+            refundTier = 'trusted';    // 신뢰 환급
+          } else {
+            refundTier = 'review';     // 확인 필요
+          }
+
+          const reasonPrefix = refundTier === 'excluded'
+            ? `사용량 차이 [B등급/계산제외] 한전: ${fmt(billTotal)}kWh / 관제: ${fmt(meterTotal)}kWh`
+            : refundTier === 'review'
+              ? `사용량 과다청구 [확인필요] 한전: ${fmt(billTotal)}kWh / 관제: ${fmt(meterTotal)}kWh`
+              : `사용량 과다청구 한전: ${fmt(billTotal)}kWh / 관제: ${fmt(meterTotal)}kWh`;
+
           issues.push({
             code: 'A5', level: 'critical', cat: 'money', col: '사용량',
-            reason: `사용량 과다청구 / 한전: ${fmt(billTotal)}kWh / 관제: ${fmt(meterTotal)}kWh / +${fmt(totalDiff)}kWh 더청구`,
-            detail: `환급 예상 = 경부하 ${fmt(Math.round(refundLight))}원 + 중부하 ${fmt(Math.round(refundMid))}원 + 최대부하 ${fmt(Math.round(refundPeak))}원 = ${fmt(totalRefund)}원 (한전이 관제보다 ${totalPct.toFixed(1)}% 많이 청구, 비율 ${ratio.toFixed(2)}배)`,
+            reason: `${reasonPrefix} / +${fmt(totalDiff)}kWh 더청구`,
+            detail: refundTier === 'excluded'
+              ? `V15: B등급(기간 불일치)으로 환급액 자동 계산 제외 — 룰상 차이는 ${fmt(totalRefund)}원이지만 신뢰 불가`
+              : `환급 예상 = 경부하 ${fmt(Math.round(refundLight))}원 + 중부하 ${fmt(Math.round(refundMid))}원 + 최대부하 ${fmt(Math.round(refundPeak))}원 = ${fmt(totalRefund)}원 (한전이 관제보다 ${totalPct.toFixed(1)}% 많이 청구, 비율 ${ratio.toFixed(2)}배)`,
             diff: totalRefund,          // V12 — diff는 원 단위 환급액
             usageDiff: totalDiff,       // 참고: kWh 차이
             ratio: ratio,               // V13 — 한전/관제 비율
-            dashTrusted: dashTrusted,   // V13 — 대시보드 집계 여부
+            dashTrusted: dashTrusted,   // V13 — 대시보드 집계 여부 (V15에서는 refundTier로 대체 권장)
+            matchGrade: matchGrade,     // V15 — 매칭 신뢰등급
+            refundTier: refundTier,     // V15 — 환급 분류 (trusted/review/excluded)
           });
         } else if (totalDiff < 0) {
           ok.사용량 = true;  // 우리 이득
@@ -2765,8 +3305,13 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
         }
       }
 
+      // V12 // V13 // V14 — A5 사용량 검증 종료
+      } // if (!skipUsage) 끝 — 사용량 비교만 skipUsage 영향 받음
+
       // V9 #C16 재설계: 충전기 N개면 +N kW 허용 (완전 일치 OR N kW 이내)
       // 초과요금 발생한 곳은 치명 (허용치 내라도)
+      // V15 #4 — skipUsage 블록 밖으로 이동: 급속충전소(≥30kW)에서도 계약전력 검증 항상 수행
+      // 이유: 급속/고용량 충전소가 계약 증설 가장 시급한 자산인데, 사용량 스킵 때문에 계약전력 검증까지 빠지면 큰 누락
       if (m.정격용량합 > 0 && b.계약전력 > 0) {
         const diff = m.정격용량합 - b.계약전력;
         const tol = m.충전기수 > 0 ? m.충전기수 : 1;  // 충전기 N개 = +N kW 허용
@@ -2798,7 +3343,7 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
           });
         }
       }
-      } // if (!skipUsage) 끝
+      // V15 #4 — C16 분리 종료. 이하 C17 등 기타 검증은 계속
 
       // C17: 최대수요전력 / 계약전력
       if (b.최대수요전력 > 0 && b.계약전력 > 0) {
@@ -2868,8 +3413,16 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
     }
 
     // #17 — bill 1건 = 1 entry (custNo별 자동 통합)
+    // V14 #1 — 관제 매칭 여부 결과에 포함 (관제 미관리 트랙용)
+    // V15 #2 — matchGrade도 함께 포함 (S/A/B/C)
+    const meterMatched = !!(m && (matchedBy === 'period' || matchedBy === 'cust-fallback'));
     if (issues.length > 0 || Object.keys(calcs).length > 0 || Object.keys(ok).length > 0) {
-      out.push({ bill: b, meter: m, issues, calcs, ok });
+      out.push({ bill: b, meter: m, issues, calcs, ok, meterMatched, matchedBy, matchGrade });
+    } else {
+      // V14 #1 — 이슈 없어도 매칭 안되면 트래킹 (관제 미관리)
+      if (!meterMatched && (Object.keys(byPeriod).length > 0 || Object.keys(byCust).length > 0)) {
+        out.push({ bill: b, meter: null, issues: [], calcs: {}, ok: {}, meterMatched: false, matchedBy: 'none', matchGrade: 'C' });
+      }
     }
   }
 
@@ -3089,6 +3642,34 @@ async function runValidation() {
         });
         sessionStorage.setItem('everon_last_ym', billYm);
       } catch (e) { console.warn('validation save:', e); }
+
+      // V14 #1 — 관제 미관리 (빌코리아 ✓ / 관제 ✗) 저장
+      try {
+        await db.untracked.where('yyyymm').equals(billYm).delete();
+        const untrackedRecords = validationResults
+          .filter(r => r.meterMatched === false && r.bill && r.bill.custNo)
+          .map(r => ({
+            yyyymm: billYm,
+            custNo: r.bill.custNo,
+            주소: r.bill.주소 || '',
+            계약종별: r.bill.계약종별 || '',
+            전압구분: r.bill.전압구분 || 'high',
+            전압구분라벨: r.bill.전압구분라벨 || '고압',
+            관할사업소: r.bill.관할사업소 || '',
+            계약전력: r.bill.계약전력 || 0,
+            요금적용전력: r.bill.요금적용전력 || 0,
+            사용량: r.bill.사용량 || 0,
+            청구요금: r.bill.청구요금 || 0,
+            사용시작: r.bill.사용시작 || '',
+            사용끝: r.bill.사용끝 || '',
+            납기일: r.bill.납기일 || '',
+            납기일자: r.bill.납기일자 || 0,
+            detectedAt: new Date().toISOString(),
+          }));
+        if (untrackedRecords.length > 0) {
+          await db.untracked.bulkPut(untrackedRecords);
+        }
+      } catch (e) { console.warn('untracked save:', e); }
     }
 
     updateBadges();
@@ -3274,7 +3855,10 @@ async function renderCategory(view) {
         ].join(' ').toLowerCase();
         if (!hay.includes(searchQ)) continue;
       }
-      rows.push({ ...i, bill: r.bill, meter: r.meter });
+      // V15 — issue에 matchGrade 없으면 r에서 가져와 보조
+      const enriched = { ...i, bill: r.bill, meter: r.meter };
+      if (!enriched.matchGrade && r.matchGrade) enriched.matchGrade = r.matchGrade;
+      rows.push(enriched);
     }
   }
   rows.sort((a, b) => {
@@ -3294,6 +3878,26 @@ async function renderCategory(view) {
     return;
   }
 
+  // V14 — 해결완료 / 이전해결 / 고객메모 일괄 lookup
+  const resolvedMap = {};       // id → resolved record
+  const priorResolvedMap = {};  // (custNo+code) → 가장 최근 다른 월 해결기록
+  const customerNotes = {};     // custNo → note
+  try {
+    const resolvedAll = await db.resolved.toArray();
+    for (const r of resolvedAll) {
+      resolvedMap[r.id] = r;
+      const k = `${r.custNo}|${r.code}`;
+      if (!priorResolvedMap[k] || (priorResolvedMap[k].resolvedAt || '') < (r.resolvedAt || '')) {
+        priorResolvedMap[k] = r;
+      }
+    }
+    const allCusts = new Set(rows.map(r => r.bill.custNo).filter(Boolean));
+    for (const c of allCusts) {
+      const n = await db.customerNotes.get(c);
+      if (n) customerNotes[c] = n;
+    }
+  } catch(e) { console.warn('V14 lookup:', e); }
+
   // #17 고객번호별 그룹화
   const byCust = {};
   for (const r of rows) {
@@ -3311,12 +3915,50 @@ async function renderCategory(view) {
         <th>주소/충전소</th>
         <th>내용 / 계산 근거</th>
         <th style="width:120px;">차이</th>
+        <th style="width:100px;text-align:center;">처리</th>
       </tr></thead>
-      <tbody>${groups.map(g => g.items.map((r, idx) => `
-        <tr class="issue-row ${r.level}${r.tag ? ' tag-' + r.tag : ''}" ${idx > 0 ? 'data-grouped="1" style="border-top:1px dashed var(--border);"' : ''}>
+      <tbody>${groups.map(g => {
+        const note = customerNotes[g.bill.custNo];
+        const memoBadge = note ? `<div style="margin-top:4px;font-size:11px;color:#92400e;background:#fef3c7;padding:3px 8px;border-radius:4px;display:inline-block;border:1px solid #fde68a;">📝 ${escapeHtml((note.text||'').substring(0,30))}${(note.text||'').length>30?'…':''}</div>` : '';
+        return g.items.map((r, idx) => {
+          const ym = r.bill.billYyyymm || r.bill.yyyymm || '';
+          const resolvedId = makeResolvedId(ym, g.bill.custNo, r.code);
+          const isResolved = !!resolvedMap[resolvedId];
+          const priorKey = `${g.bill.custNo}|${r.code}`;
+          const prior = priorResolvedMap[priorKey];
+          const isPriorOnly = !isResolved && prior && prior.yyyymm !== ym;
+          const priorBadge = isPriorOnly
+            ? `<div style="margin-top:3px;"><span class="resolve-badge prior" title="${prior.yyyymm.substring(0,4)}.${prior.yyyymm.substring(4,6)}월에 해결완료 처리됨${prior.note ? ' / 메모: '+escapeHtml(prior.note) : ''}">이전 해결 ${prior.yyyymm.substring(0,4)}.${prior.yyyymm.substring(4,6)}</span></div>`
+            : '';
+          // V15 #2,#3 — 매칭등급 / 환급분류 배지
+          const grade = r.matchGrade || '';
+          const gradeBadge = grade ? (() => {
+            if (grade === 'B') return `<span class="resolve-badge" style="background:#fef2f2;color:#991b1b;border-color:#fecdd3;margin-right:4px;" title="고객번호만 일치, 사용기간 불일치 — 환급액 자동 계산 제외">B등급</span>`;
+            if (grade === 'C') return `<span class="resolve-badge" style="background:#fee2e2;color:#7f1d1d;border-color:#fecaca;margin-right:4px;">C등급</span>`;
+            if (grade === 'A' || grade === 'S') return `<span class="resolve-badge" style="background:#d1fae5;color:#065f46;border-color:#a7f3d0;margin-right:4px;">${grade}등급</span>`;
+            return '';
+          })() : '';
+          // 환급 분류 (A5 only)
+          const tier = r.refundTier || (r.code === 'A5' && r.dashTrusted ? 'trusted' : (r.code === 'A5' ? 'review' : null));
+          const tierBadge = tier ? (() => {
+            if (tier === 'trusted') return `<span class="resolve-badge" style="background:#d1fae5;color:#065f46;border-color:#a7f3d0;margin-right:4px;" title="신뢰 환급 추정액 — S/A등급 + 비율 ≤2배 + 건당 ≤15,000원">🟢 신뢰</span>`;
+            if (tier === 'review') return `<span class="resolve-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a;margin-right:4px;" title="확인 필요 — 비율 2배 초과 또는 고액 차이">🟡 확인필요</span>`;
+            if (tier === 'excluded') return `<span class="resolve-badge" style="background:#e5e7eb;color:#4b5563;border-color:#d1d5db;margin-right:4px;" title="B등급(기간 불일치)으로 환급액 자동 계산 제외">⚪ 제외</span>`;
+            return '';
+          })() : '';
+          const reasonEsc = escapeHtml(r.reason || r.msg || '').replace(/'/g, '&#39;');
+          const addrEsc = escapeHtml(g.bill.주소 || '').replace(/'/g, '&#39;');
+          const usEsc = (g.bill.사용시작 || '').replace(/'/g, '');
+          const ueEsc = (g.bill.사용끝 || '').replace(/'/g, '');
+          const actionBtn = isResolved
+            ? `<button class="resolve-btn resolved" onclick="handleResolveClick('${ym}','${g.bill.custNo}','${r.code}')" title="해결완료 (해제하려면 클릭)\n${escapeHtml(resolvedMap[resolvedId].note||'')}">✓ 완료</button>`
+            : `<button class="resolve-btn" onclick="handleResolveClick('${ym}','${g.bill.custNo}','${r.code}','${addrEsc}','${reasonEsc}',${r.diff||0},'${usEsc}','${ueEsc}')" title="해결완료 처리">✅ 해결</button>`;
+          return `
+        <tr class="issue-row ${r.level}${r.tag ? ' tag-' + r.tag : ''}${isResolved ? ' resolved-row' : ''}" ${idx > 0 ? 'data-grouped="1" style="border-top:1px dashed var(--border);"' : ''} ${isResolved ? 'style="opacity:0.55;"' : ''}>
           <td>
             <div class="issue-code ${r.level}">${r.code}</div>
             <div class="issue-col">${escapeHtml(r.col || '')}</div>
+            ${priorBadge}
           </td>
           <td class="issue-cust">${idx === 0 ? g.bill.custNo : '<span style="color:var(--text-muted);">↳</span>'}</td>
           <td style="font-family:'SF Mono',Menlo,monospace;font-size:11px;color:var(--text-soft);">
@@ -3327,17 +3969,41 @@ async function renderCategory(view) {
               return s || e ? `${fmt(s)}<br>~ ${fmt(e)}` : (g.bill.billYyyymm || '-');
             })()}
           </td>
-          <td class="issue-addr">${idx === 0 ? escapeHtml(g.bill.주소 || (g.meter && g.meter.충전소명) || '') : ''}</td>
+          <td class="issue-addr">
+            ${idx === 0 ? escapeHtml(g.bill.주소 || (g.meter && g.meter.충전소명) || '') : ''}
+            ${idx === 0 ? memoBadge : ''}
+            ${idx === 0 ? `<button onclick="window.openMemoEditor('${g.bill.custNo}','${addrEsc}')" class="mini-link" style="margin-left:6px;font-size:10px;color:var(--accent-violet);">${note ? '메모 수정' : '+ 메모'}</button>` : ''}
+          </td>
           <td class="issue-detail">
+            <div style="margin-bottom:4px;">${gradeBadge}${tierBadge}</div>
             <div style="font-weight:600;">${escapeHtml(r.reason || r.msg || '')}</div>
             ${r.detail ? `<div style="color:var(--text-muted);font-size:12px;margin-top:3px;font-family:'SF Mono',Menlo,monospace;">${escapeHtml(r.detail)}</div>` : ''}
           </td>
           <td class="issue-diff">${r.diff != null ? `<span class="${r.diff > 0 ? 'diff-plus' : 'diff-minus'}">${r.diff > 0 ? '+' : ''}${fmt(r.diff)}</span>` : '<span style="color:var(--text-muted);">-</span>'}</td>
-        </tr>`).join('')).join('')}
+          <td style="text-align:center;">${actionBtn}</td>
+        </tr>`;
+        }).join('');
+      }).join('')}
       </tbody>
     </table>`;
   $('#catBody').innerHTML = tbl;
 }
+
+// V14 — 메모 편집 모달 (간단한 prompt 대체)
+window.openMemoEditor = async function(custNo, addr) {
+  const existing = await db.customerNotes.get(custNo);
+  const current = existing ? existing.text : '';
+  const updated = prompt(
+    `📝 고객 메모 — ${custNo}\n${addr || ''}\n\n` +
+    `메모를 입력하세요. (다음 달 같은 고객 뜨면 자동 표시)\n` +
+    `예) EV전용 관제, 직접비교 부적합 / 한전 정정 완료 등\n` +
+    `(빈 칸 + 확인 = 메모 삭제)`,
+    current
+  );
+  if (updated === null) return;
+  await saveCustomerNote(custNo, updated);
+  if (currentView && currentView.startsWith('cat-')) renderCategory(currentView);
+};
 
 // #6 카테고리별 CSV 다운로드 — V4 고객번호 텍스트 강제 (#21)
 function exportCategoryCSV() {
@@ -3844,14 +4510,18 @@ async function exportExcel(filterCat) {
     });
 
     // 2행 헤더 구조 — 1행: 그룹 병합 / 2행: 개별 컬럼
-    // [A] 기본정보 (4) | [B] 계약전력 페어 (3) | [C] 총사용량 페어 (5) |
+    // [A] 기본정보 (5) | [B] 계약전력 페어 (3) | [C] 총사용량 페어 (5) |  ← V14: 기본정보에 사용기간 추가 (#5)
     // [D] 시간대별 페어 (9) | [E] 요금 검증 (12) | [F] 이슈 (4)
+    // V15 #6 — 외부 제출용 톤으로 변환: "Claude_" → "재계산_", "한전 ↔ 관제" → "청구액 vs 재계산액"
+    //          내부 UI는 한전/관제 표현 유지, 엑셀 export만 방어적 톤 사용
     const groups = [
-      { title: '기본 정보', color: COLORS.hdrInfo, textColor: 'FFFFFFFF', cols: ['고객번호', '주소/충전소', '계약종별', '청구월'] },
-      { title: '계약전력 (한전 ↔ 관제)', color: COLORS.hdrKepco, cols: ['한전_계약전력', '관제_계약전력', '차이'] },
-      { title: '총사용량 (한전 ↔ 관제)', color: COLORS.hdrMeter, cols: ['한전_사용량', '관제_총사용량', '차이_kWh', '충전기종류', 'AC허용치'] },
-      { title: '시간대별 사용량 (한전 ↔ 관제 페어)', color: COLORS.hdrKepco, cols: ['한전_경부하', '관제_경부하', '차이', '한전_중부하', '관제_중부하', '차이', '한전_최대부하', '관제_최대부하', '차이'] },
-      { title: '요금 검증 (한전 ↔ 계산)', color: COLORS.hdrCalc, cols: ['한전_기본요금', 'Claude_기본요금', '차이', '한전_공급가액', 'Claude_공급가액', '차이', '한전_부가세', 'Claude_부가세', '한전_전력기금', 'Claude_전력기금', '한전_청구요금', 'Claude_청구요금'] },
+      // V14 #5 — 사용기간 컬럼 추가, V14 #2,3 — 전압구분/관할사업소 추가
+      // V15 #2,#3 — 매칭신뢰등급(S/A/B/C), 환급분류(신뢰/확인필요/제외) 추가
+      { title: '기본 정보', color: COLORS.hdrInfo, textColor: 'FFFFFFFF', cols: ['고객번호', '주소/충전소', '계약종별', '전압구분', '관할사업소', '청구월', '사용기간', '납기일', '매칭_신뢰등급', '환급_분류'] },
+      { title: '계약전력 (한전 청구 vs 관제 등록)', color: COLORS.hdrKepco, cols: ['한전청구_계약전력', '관제등록_계약전력', '차이'] },
+      { title: '총사용량 (한전 청구 vs 관제 사용량 기준 재계산)', color: COLORS.hdrMeter, cols: ['한전청구_사용량', '관제기준_재계산_총사용량', '차이_kWh', '충전기종류', 'AC허용치'] },
+      { title: '시간대별 사용량 (한전 청구 vs 관제 사용량 기준 재계산)', color: COLORS.hdrKepco, cols: ['한전청구_경부하', '관제기준_재계산_경부하', '차이', '한전청구_중부하', '관제기준_재계산_중부하', '차이', '한전청구_최대부하', '관제기준_재계산_최대부하', '차이'] },
+      { title: '요금 검증 (한전 청구 vs 단가표 재계산)', color: COLORS.hdrCalc, cols: ['한전청구_기본요금', '재계산_기본요금', '차이', '한전청구_공급가액', '재계산_공급가액', '차이', '한전청구_부가세', '재계산_부가세', '한전청구_전력기금', '재계산_전력기금', '한전청구_청구요금', '재계산_청구요금'] },
       { title: '이슈', color: COLORS.hdrIssue, cols: ['치명_N', '주의_N', '주요_코드', '주요_내용'] },
     ];
 
@@ -3882,8 +4552,8 @@ async function exportExcel(filterCat) {
     });
     ws.getRow(2).height = 30;
 
-    // 열 너비 설정
-    const widths = [14, 32, 12, 10, 12, 12, 10, 12, 12, 10, 10, 12, 12, 12, 10, 12, 12, 10, 12, 12, 10, 12, 12, 10, 12, 12, 10, 12, 12, 12, 12, 12, 12, 8, 8, 10, 60];
+    // 열 너비 설정 (V14 — 기본정보 4컬럼 추가 / V15 — 매칭등급 + 환급분류 추가)
+    const widths = [14, 32, 12, 8, 14, 10, 24, 12, 8, 14,  /* 기본정보 10 */  12, 12, 10,  /* 계약전력 3 */  12, 12, 10, 10, 10,  /* 사용량 5 */  12, 12, 10, 12, 12, 10, 12, 12, 10,  /* 시간대 9 */  12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,  /* 요금 12 */  8, 8, 10, 60  /* 이슈 4 */];
     widths.forEach((w, i) => { if (ws.getColumn(i + 1)) ws.getColumn(i + 1).width = w; });
 
     // 데이터 행 채우기
@@ -3902,12 +4572,33 @@ async function exportExcel(filterCat) {
         return (order[a.level] - order[bb.level]) || Math.abs(bb.diff || 0) - Math.abs(a.diff || 0);
       })[0];
 
+      // V14 #5 — 사용기간 문자열 생성 (YYYY-MM-DD ~ YYYY-MM-DD)
+      const fmtPeriodDate = (d) => d ? (d.length === 8 ? `${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}` : d) : '';
+      const usePeriod = (b.사용시작 || b.사용끝)
+        ? `${fmtPeriodDate(b.사용시작)} ~ ${fmtPeriodDate(b.사용끝)}`
+        : '';
+      const dueFmt = b.납기일 ? `${b.납기일.substring(0,4)}-${b.납기일.substring(4,6)}-${b.납기일.substring(6,8)}` : '';
+
       const row = [
-        // 기본정보
+        // 기본정보 (V14 #2,3,4,5 — 전압구분/관할사업소/사용기간/납기일 추가)
+        // V15 #2,#3 — 매칭_신뢰등급, 환급_분류 추가
         b.custNo || '',
         b.주소 || m.충전소명 || '',
         b.계약종별 || '',
+        b.전압구분라벨 || (/저압/.test(b.계약종별 || '') ? '저압' : '고압'),  // V14 #2
+        b.관할사업소 || '',                                                   // V14 #3
         b.billYyyymm || '',
+        usePeriod,                                                            // V14 #5
+        dueFmt,                                                               // V14 #4
+        r.matchGrade || (r.meterMatched ? 'A' : 'C'),                         // V15 #2
+        (() => {                                                              // V15 #3 — A5 환급 분류
+          const a5 = (r.issues || []).find(i => i.code === 'A5');
+          if (!a5) return '';
+          if (a5.refundTier === 'trusted') return '신뢰';
+          if (a5.refundTier === 'review') return '확인필요';
+          if (a5.refundTier === 'excluded') return '제외(B등급)';
+          return a5.dashTrusted ? '신뢰' : '확인필요';  // V14 호환
+        })(),
         // 계약전력 페어
         b.계약전력 || '',
         m.계약전력 || '',
@@ -3955,29 +4646,33 @@ async function exportExcel(filterCat) {
       }
 
       // 각 이슈별 해당 셀 색칠 + 코멘트
+      // V14 #5 — 기본정보가 4 → 8 컬럼으로 늘어났으므로 모든 인덱스 +4
+      // V15 #2,#3 — 기본정보가 8 → 10 컬럼 (매칭등급+환급분류 추가)으로 인덱스 추가 +2
       const issueColMap = {
-        '사용량': [8, 9, 10],  // 한전/관제/차이
-        '총사용량': [8, 9, 10],
-        '계약전력': [5, 6, 7],
-        '요금적용전력': [5, 6, 7],
-        '기본요금': [22, 23, 24],
-        '공급가액': [25, 26, 27],
-        '부가가치세': [28, 29],
-        '전력기금': [30, 31],
-        '청구요금': [32, 33],
-        '초과요금': [5, 6, 7],
+        '사용량': [14, 15, 16],  // 한전/관제/차이
+        '총사용량': [14, 15, 16],
+        '계약전력': [11, 12, 13],
+        '요금적용전력': [11, 12, 13],
+        '기본요금': [28, 29, 30],
+        '공급가액': [31, 32, 33],
+        '부가가치세': [34, 35],
+        '전력기금': [36, 37],
+        '청구요금': [38, 39],
+        '초과요금': [11, 12, 13],
         '미납요금': [1],
-        '경부하사용량': [13, 14, 15],
-        '중부하사용량': [16, 17, 18],
-        '최대부하사용량': [19, 20, 21],
-        '시간대별': [13, 14, 15, 16, 17, 18, 19, 20, 21],
+        '경부하사용량': [19, 20, 21],
+        '중부하사용량': [22, 23, 24],
+        '최대부하사용량': [25, 26, 27],
+        '시간대별': [19, 20, 21, 22, 23, 24, 25, 26, 27],
         '중복청구': [1],
-        '검침기간': [4],
-        '전월지침': [8],
+        '검침기간': [7],  // 사용기간 컬럼
+        '청구기간': [7],  // V15 — A0 청구기간 단가 분할
+        '전월지침': [14],
+        '관제매칭': [9],  // V15 — 매칭_신뢰등급
       };
 
       for (const iss of r.issues) {
-        const targetCols = issueColMap[iss.col] || [34, 35, 36, 37];
+        const targetCols = issueColMap[iss.col] || [40, 41, 42, 43];
         // V5 — tag 우선 (green = 우리 이득, orange = 이상치 체크만)
         let fillColor = levelFill[iss.level];
         if (iss.tag === 'green') fillColor = COLORS.ok;
@@ -4037,15 +4732,23 @@ async function exportExcel(filterCat) {
         return (ord[a.level] - ord[bb.level]) || Math.abs(bb.diff || 0) - Math.abs(a.diff || 0);
       });
       const cs = wb.addWorksheet(`${cat.emoji}${cat.title}`, { views: [{ state: 'frozen', ySplit: 1 }] });
+      // V14 #5 — 사용기간 컬럼 추가 + V14 #2,3,4 — 전압/사업소/납기일 추가
+      // V15 #2,#3 — 매칭등급, 환급분류 추가 / V15 #6 — 외부 톤 헤더
       cs.columns = [
         { header: '코드',    key: 'code',  width: 8 },
         { header: '레벨',    key: 'level', width: 8 },
         { header: '고객번호', key: 'cust', width: 14 },
         { header: '주소/충전소', key: 'addr', width: 36 },
+        { header: '전압', key: 'volt', width: 8 },                  // V14 #2
+        { header: '관할사업소', key: 'branch', width: 14 },         // V14 #3
         { header: '청구월',  key: 'ym',    width: 10 },
+        { header: '사용기간', key: 'period', width: 24 },           // V14 #5 ⭐
+        { header: '납기일', key: 'due', width: 12 },                // V14 #4
+        { header: '매칭_신뢰등급', key: 'grade', width: 12 },       // V15 #2
+        { header: '환급_분류', key: 'tier', width: 14 },            // V15 #3
         { header: '항목',    key: 'col',   width: 14 },
-        { header: '사유 (쉬운 말)', key: 'reason', width: 50 },
-        { header: '계산 근거 (한전/계산/차이)', key: 'detail', width: 60 },
+        { header: '사유 (재계산 결과)', key: 'reason', width: 50 },  // V15 #6 — 외부 톤
+        { header: '계산 근거 (한전청구 / 재계산 / 차이)', key: 'detail', width: 60 },  // V15 #6
         { header: '차액',    key: 'diff',  width: 14, style: { numFmt: '#,##0' } },
       ];
       const head = cs.getRow(1);
@@ -4055,12 +4758,34 @@ async function exportExcel(filterCat) {
       head.alignment = { horizontal: 'center', vertical: 'middle' };
 
       for (const iss of rows) {
+        // V14 #5 — 사용기간 문자열
+        const fmtPD = (d) => d ? (d.length === 8 ? `${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}` : d) : '';
+        const period = (iss.bill && (iss.bill.사용시작 || iss.bill.사용끝))
+          ? `${fmtPD(iss.bill.사용시작)} ~ ${fmtPD(iss.bill.사용끝)}`
+          : '';
+        const dueFmt = iss.bill?.납기일 ? `${iss.bill.납기일.substring(0,4)}-${iss.bill.납기일.substring(4,6)}-${iss.bill.납기일.substring(6,8)}` : '';
+        // V15 #2 — 매칭등급
+        const grade = iss.matchGrade || (iss.bill && iss.bill._matchGrade) || '';
+        // V15 #3 — 환급 분류 (A5 only)
+        let tier = '';
+        if (iss.code === 'A5') {
+          if (iss.refundTier === 'trusted') tier = '신뢰';
+          else if (iss.refundTier === 'review') tier = '확인필요';
+          else if (iss.refundTier === 'excluded') tier = '제외(B등급)';
+          else tier = iss.dashTrusted ? '신뢰' : '확인필요';
+        }
         const newRow = cs.addRow({
           code: iss.code,
           level: iss.level === 'critical' ? '치명' : iss.level === 'warning' ? '주의' : '참고',
           cust: iss.bill?.custNo || '',
           addr: iss.bill?.주소 || iss.meter?.충전소명 || '',
+          volt: iss.bill?.전압구분라벨 || '',
+          branch: iss.bill?.관할사업소 || '',
           ym: iss.bill?.billYyyymm || '',
+          period: period,
+          due: dueFmt,
+          grade: grade,
+          tier: tier,
           col: iss.col || '',
           reason: iss.reason || iss.msg || '',
           detail: iss.detail || '',
@@ -4074,15 +4799,36 @@ async function exportExcel(filterCat) {
         newRow.getCell('level').font = { bold: true };
         newRow.getCell('code').fill = fill(cat.color);
         newRow.getCell('cust').numFmt = '@';  // V4 #21 텍스트 강제
+        // V15 — 매칭등급에 따라 색칠
+        if (grade === 'B') {
+          newRow.getCell('grade').fill = fill('FFFEE2E2');  // B등급 옅은 빨강
+          newRow.getCell('grade').font = { bold: true, color: { argb: 'FF991B1B' } };
+        } else if (grade === 'C') {
+          newRow.getCell('grade').fill = fill('FFFECACA');  // C등급 더 진한 빨강
+          newRow.getCell('grade').font = { bold: true, color: { argb: 'FF7F1D1D' } };
+        } else if (grade === 'A' || grade === 'S') {
+          newRow.getCell('grade').fill = fill('FFD1FAE5');  // A/S등급 옅은 초록
+        }
+        // V15 — 환급 분류에 따라 색칠
+        if (tier === '신뢰') {
+          newRow.getCell('tier').fill = fill('FFD1FAE5');
+          newRow.getCell('tier').font = { bold: true, color: { argb: 'FF065F46' } };
+        } else if (tier === '확인필요') {
+          newRow.getCell('tier').fill = fill('FFFEF3C7');
+          newRow.getCell('tier').font = { bold: true, color: { argb: 'FF92400E' } };
+        } else if (tier === '제외(B등급)') {
+          newRow.getCell('tier').fill = fill('FFE5E7EB');
+          newRow.getCell('tier').font = { color: { argb: 'FF6B7280' } };
+        }
         // 녹색/주황이면 전체 행 옅게 색칠
         if (iss.tag === 'green' || iss.tag === 'orange') {
-          ['code','level','cust','addr','ym','col','reason','detail','diff'].forEach(k => {
+          ['code','level','cust','addr','volt','branch','ym','period','due','grade','tier','col','reason','detail','diff'].forEach(k => {
             newRow.getCell(k).fill = fill(lvlFill);
           });
         }
         newRow.alignment = { vertical: 'top', wrapText: true };
       }
-      cs.autoFilter = { from: { row: 1, column: 1 }, to: { row: rows.length + 1, column: 9 } };
+      cs.autoFilter = { from: { row: 1, column: 1 }, to: { row: rows.length + 1, column: 15 } };
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -4522,8 +5268,488 @@ async function init() {
     console.warn('validation restore:', err);
   }
 
+  // V14 — 사이드바 검증 이력 갱신 + 해결완료 카운트 + 미관리 카운트
+  try { await refreshHistorySidebar(); } catch(e) { console.warn('history sidebar:', e); }
+  try { await refreshUntrackedBadge(); } catch(e) { console.warn('untracked badge:', e); }
+  try { await refreshResolvedBadge(); } catch(e) { console.warn('resolved badge:', e); }
+
   await renderDashboard();
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  V14 — 신규 기능 함수들 (관제 미관리 / 해결완료 / 메모 / 이력 / 납기 필터)
+// ═══════════════════════════════════════════════════════════════
+
+// V14 — 납기일 필터 상태 (#4)
+let dueDateFilter = null; // null=전체, 5/10/15/18/20/25/31(말일)
+
+function setDueDateFilter(day) {
+  dueDateFilter = (dueDateFilter === day) ? null : day;
+  document.querySelectorAll('.due-chip').forEach(el => {
+    const d = parseInt(el.dataset.day, 10);
+    el.classList.toggle('active', d === dueDateFilter);
+  });
+  // 현재 view에 따라 다시 렌더링
+  if (currentView === 'untracked') renderUntracked();
+  else if (currentView && currentView.startsWith('cat-')) renderCategory(currentView);
+}
+
+// V14 — 청구건이 현재 납기일 필터에 매칭되는지 (#4)
+function matchesDueDateFilter(billOrRec) {
+  if (dueDateFilter == null) return true;
+  const day = (billOrRec && billOrRec.납기일자) || 0;
+  if (!day) return false;
+  if (dueDateFilter === 31) {
+    // 말일: 28~31 모두 매칭
+    return day >= 28;
+  }
+  return day === dueDateFilter;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// V14 #1 — 관제 미관리 트랙 (untracked)
+// ═══════════════════════════════════════════════════════════════
+let untrackedFilter = { volt: 'all' };
+
+function setUntrackedFilter(key, val) {
+  untrackedFilter[key] = val;
+  // 칩 활성/비활성
+  if (key === 'volt') {
+    ['All','High','Low'].forEach(x => {
+      const el = document.querySelector(`#untrackVolt${x}`);
+      if (el) el.classList.toggle('active', untrackedFilter.volt === x.toLowerCase());
+    });
+  }
+  renderUntracked();
+}
+
+async function refreshUntrackedBadge() {
+  try {
+    const cnt = await db.untracked.count();
+    const el = document.getElementById('badge-untracked');
+    if (el) {
+      el.textContent = cnt;
+      el.classList.toggle('zero', cnt === 0);
+    }
+  } catch(e) {}
+}
+
+async function renderUntracked() {
+  const all = await db.untracked.toArray();
+  const search = (document.getElementById('untrackedSearch')?.value || '').trim().toLowerCase();
+  const voltFilter = untrackedFilter.volt;
+
+  // 칩 초기화
+  ['All','High','Low'].forEach(x => {
+    const el = document.querySelector(`#untrackVolt${x}`);
+    if (el) el.classList.toggle('active', untrackedFilter.volt === x.toLowerCase());
+  });
+
+  let filtered = all;
+  if (voltFilter !== 'all') {
+    filtered = filtered.filter(r => (r.전압구분 || 'high') === voltFilter);
+  }
+  if (search) {
+    filtered = filtered.filter(r =>
+      (r.custNo || '').toLowerCase().includes(search) ||
+      (r.주소 || '').toLowerCase().includes(search) ||
+      (r.관할사업소 || '').toLowerCase().includes(search)
+    );
+  }
+
+  // 정렬: 청구금액 큰 순
+  filtered.sort((a, b) => (b.청구요금 || 0) - (a.청구요금 || 0));
+
+  // 카운트 업데이트
+  const cntEl = document.getElementById('untrackedCount');
+  if (cntEl) cntEl.textContent = fmt(all.length) + '건';
+  const tagEl = document.getElementById('untrackedTagCount');
+  if (tagEl) tagEl.textContent = fmt(filtered.length) + '건';
+
+  const body = document.getElementById('untrackedBody');
+  if (!body) return;
+  if (filtered.length === 0) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">관제 미관리 자산이 없습니다</div><div class="empty-sub">검증을 실행하면 빌코리아에는 있지만 관제에 없는 충전소가 여기 표시됩니다</div></div>`;
+    return;
+  }
+  let html = `<table class="issue-table"><thead><tr>
+    <th>청구월</th><th>고객번호</th><th>주소 / 충전소</th><th>계약</th><th>관할사업소</th><th>납기일</th>
+    <th style="text-align:right;">계약전력</th><th style="text-align:right;">사용량</th><th style="text-align:right;">청구액</th>
+  </tr></thead><tbody>`;
+  for (const r of filtered) {
+    const voltLabel = r.전압구분라벨 || (r.전압구분 === 'low' ? '저압' : '고압');
+    const voltColor = r.전압구분 === 'low' ? 'var(--accent-mint)' : 'var(--accent-violet)';
+    const voltBg = r.전압구분 === 'low' ? 'var(--accent-mint-soft)' : 'var(--accent-violet-soft)';
+    const due = r.납기일 ? `${r.납기일.substring(0,4)}.${r.납기일.substring(4,6)}.${r.납기일.substring(6,8)}` : '—';
+    html += `<tr class="issue-row">
+      <td><span class="tag gray">${r.yyyymm.substring(0,4)}.${r.yyyymm.substring(4,6)}</span></td>
+      <td><span class="issue-cust">${escapeHtml(r.custNo)}</span></td>
+      <td><div style="font-weight:600;">${escapeHtml(r.주소 || '—')}</div><div class="issue-col">${escapeHtml(r.계약종별 || '')}</div></td>
+      <td><span class="tag" style="background:${voltBg};color:${voltColor};">${voltLabel}</span></td>
+      <td><span style="font-size:12px;">${escapeHtml(r.관할사업소 || '—')}</span></td>
+      <td><span style="font-size:12px;color:var(--text-soft);">${due}</span></td>
+      <td style="text-align:right;font-family:'SF Mono',monospace;font-size:12px;">${fmt(r.계약전력)} kW</td>
+      <td style="text-align:right;font-family:'SF Mono',monospace;font-size:12px;">${fmt(r.사용량)} kWh</td>
+      <td style="text-align:right;font-family:'SF Mono',monospace;font-weight:700;color:var(--danger);">${fmt(r.청구요금)}원</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  body.innerHTML = html;
+}
+
+async function exportUntrackedCSV() {
+  const rows = await db.untracked.toArray();
+  if (rows.length === 0) { toast('내보낼 데이터가 없습니다', 'error'); return; }
+  const headers = ['청구년월', '고객번호', '주소', '계약종별', '전압구분', '관할사업소', '납기일', '계약전력(kW)', '사용량(kWh)', '청구요금', '검출일시'];
+  const lines = [headers.join(',')];
+  rows.sort((a, b) => (b.yyyymm || '').localeCompare(a.yyyymm || ''));
+  for (const r of rows) {
+    const v = [
+      r.yyyymm || '',
+      r.custNo || '',
+      `"${(r.주소 || '').replace(/"/g, '""')}"`,
+      `"${(r.계약종별 || '').replace(/"/g, '""')}"`,
+      r.전압구분라벨 || '',
+      `"${(r.관할사업소 || '').replace(/"/g, '""')}"`,
+      r.납기일 || '',
+      r.계약전력 || 0,
+      r.사용량 || 0,
+      r.청구요금 || 0,
+      (r.detectedAt || '').substring(0, 10),
+    ];
+    lines.push(v.join(','));
+  }
+  const csv = '\ufeff' + lines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `관제미관리_${new Date().toISOString().substring(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV 다운로드 완료', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// V14 #9 — 해결완료 트래킹
+// ═══════════════════════════════════════════════════════════════
+// V14 — base ID
+function makeResolvedId(yyyymm, custNo, code) {
+  return `${yyyymm}|${custNo}|${code}`;
+}
+
+// V15 #5 — 충돌 시 사용기간 또는 suffix를 붙여 unique하게 만듦
+//   기본: yyyymm|custNo|code
+//   충돌: yyyymm|custNo|code#2, #3 ...
+//   useStart/useEnd 정보 있으면 더 안전하게: yyyymm|custNo|code|MMDD-MMDD
+async function makeUniqueResolvedId(yyyymm, custNo, code, useStart, useEnd) {
+  const base = makeResolvedId(yyyymm, custNo, code);
+  // 1) base 자체가 비어있으면 그대로 사용
+  const baseExists = await db.resolved.get(base);
+  if (!baseExists) return base;
+  // 2) 사용기간 있으면 suffix로 시도 (가독성 좋음)
+  if (useStart && useEnd) {
+    const periodSuffix = `${normalizeDate(useStart).substring(4) || ''}-${normalizeDate(useEnd).substring(4) || ''}`;
+    if (periodSuffix.length > 1) {
+      const candidate = `${base}|${periodSuffix}`;
+      const exists = await db.resolved.get(candidate);
+      if (!exists) return candidate;
+    }
+  }
+  // 3) 마지막 수단: #2, #3, ... 숫자 suffix
+  for (let i = 2; i < 20; i++) {
+    const candidate = `${base}#${i}`;
+    const exists = await db.resolved.get(candidate);
+    if (!exists) return candidate;
+  }
+  // 4) 정말 안되면 timestamp 붙임 (이론상 도달 안함)
+  return `${base}#${Date.now()}`;
+}
+
+async function isResolved(yyyymm, custNo, code) {
+  try {
+    const id = makeResolvedId(yyyymm, custNo, code);
+    // V15 #5 — base ID 또는 그 base로 시작하는 모든 ID 확인 (충돌 처리된 것 포함)
+    const baseRec = await db.resolved.get(id);
+    if (baseRec) return baseRec;
+    // base 없으면 prefix 매칭으로 첫 번째 찾음
+    const all = await db.resolved.where('id').startsWith(id + '|').or('id').startsWith(id + '#').toArray();
+    return all.length > 0 ? all[0] : null;
+  } catch(e) { return null; }
+}
+
+// V14 #9 A안 — 같은 고객+같은 코드가 다른 월에 이전에 해결완료 처리된 적 있는지
+async function findPriorResolution(custNo, code, currentYm) {
+  try {
+    const all = await db.resolved.where('custNo').equals(custNo).toArray();
+    const matched = all.filter(r => r.code === code && r.yyyymm !== currentYm);
+    if (matched.length === 0) return null;
+    matched.sort((a, b) => (b.resolvedAt || '').localeCompare(a.resolvedAt || ''));
+    return matched[0];
+  } catch(e) { return null; }
+}
+
+async function markResolved(yyyymm, custNo, code, opts) {
+  // V15 #5 — 충돌 회피 ID 생성 (사용기간 우선 → 숫자 suffix fallback)
+  const id = await makeUniqueResolvedId(yyyymm, custNo, code, opts?.useStart, opts?.useEnd);
+  const rec = {
+    id,
+    yyyymm,
+    custNo,
+    code,
+    주소: opts?.주소 || '',
+    reason: opts?.reason || '',
+    diff: opts?.diff || 0,
+    note: opts?.note || '',
+    사용시작: opts?.useStart || '',  // V15 — 충돌 후 식별용
+    사용끝: opts?.useEnd || '',
+    resolvedAt: new Date().toISOString(),
+    resolvedBy: opts?.resolvedBy || 'everon',
+  };
+  await db.resolved.put(rec);
+  await refreshResolvedBadge();
+  toast(id !== makeResolvedId(yyyymm, custNo, code) ? '✅ 해결완료 (중복 ID 자동 분리)' : '✅ 해결 완료로 표시되었습니다', 'success');
+  return rec;
+}
+
+async function unmarkResolved(yyyymm, custNo, code) {
+  // V15 #5 — base ID와 모든 suffix variant 다 제거
+  const baseId = makeResolvedId(yyyymm, custNo, code);
+  try {
+    await db.resolved.delete(baseId);
+    // suffix variants
+    const variants = await db.resolved.where('id').startsWith(baseId + '|').or('id').startsWith(baseId + '#').toArray();
+    for (const v of variants) {
+      await db.resolved.delete(v.id);
+    }
+  } catch(e) { console.warn('unmark:', e); }
+  await refreshResolvedBadge();
+  toast('해결 완료 해제됨', 'info');
+}
+
+async function refreshResolvedBadge() {
+  try {
+    const cnt = await db.resolved.count();
+    const el = document.getElementById('badge-resolved');
+    if (el) {
+      el.textContent = cnt;
+      el.classList.toggle('zero', cnt === 0);
+    }
+  } catch(e) {}
+}
+
+window.handleResolveClick = async function(yyyymm, custNo, code, addr, reason, diff, useStart, useEnd) {
+  // 이미 해결됐는지 확인
+  const existing = await isResolved(yyyymm, custNo, code);
+  if (existing) {
+    if (confirm('이미 해결완료된 이슈입니다. 해제하시겠습니까?')) {
+      await unmarkResolved(yyyymm, custNo, code);
+      // UI 갱신
+      if (currentView && currentView.startsWith('cat-')) renderCategory(currentView);
+      else if (currentView === 'resolved') renderResolvedList();
+    }
+    return;
+  }
+  const note = prompt('처리 메모 (선택사항):\n예) 한전 클레임 접수, 빌코리아 정정 요청 등', '');
+  if (note === null) return; // 취소
+  await markResolved(yyyymm, custNo, code, {
+    주소: addr || '', reason: reason || '', diff: diff || 0, note: note || '',
+    useStart: useStart || '', useEnd: useEnd || ''  // V15 #5 — 충돌 회피용
+  });
+  if (currentView && currentView.startsWith('cat-')) renderCategory(currentView);
+};
+
+async function renderResolvedList() {
+  const all = await db.resolved.toArray();
+  const search = (document.getElementById('resolvedSearch')?.value || '').trim().toLowerCase();
+  const periodFilter = document.getElementById('resolvedPeriodFilter')?.value || 'all';
+
+  // 통계
+  const totalCnt = all.length;
+  const totalAmt = all.reduce((s, r) => s + (r.diff || 0), 0);
+  const now = Date.now();
+  const recent30 = all.filter(r => {
+    const t = new Date(r.resolvedAt || 0).getTime();
+    return (now - t) < 30 * 86400 * 1000;
+  }).length;
+
+  if (document.getElementById('rs-cnt')) document.getElementById('rs-cnt').textContent = fmt(totalCnt) + '건';
+  if (document.getElementById('rs-amt')) document.getElementById('rs-amt').innerHTML = fmtMoneyShort(totalAmt);
+  if (document.getElementById('rs-recent')) document.getElementById('rs-recent').textContent = fmt(recent30) + '건';
+  if (document.getElementById('rs-recent-sub')) document.getElementById('rs-recent-sub').textContent = '최근 30일';
+
+  // 필터링
+  let filtered = all;
+  if (periodFilter !== 'all') {
+    const days = parseInt(periodFilter, 10);
+    const cutoff = now - days * 86400 * 1000;
+    filtered = filtered.filter(r => new Date(r.resolvedAt || 0).getTime() >= cutoff);
+  }
+  if (search) {
+    filtered = filtered.filter(r =>
+      (r.custNo || '').toLowerCase().includes(search) ||
+      (r.code || '').toLowerCase().includes(search) ||
+      (r.note || '').toLowerCase().includes(search) ||
+      (r.주소 || '').toLowerCase().includes(search)
+    );
+  }
+  filtered.sort((a, b) => (b.resolvedAt || '').localeCompare(a.resolvedAt || ''));
+
+  if (document.getElementById('resolvedHeadCount')) document.getElementById('resolvedHeadCount').textContent = fmt(filtered.length) + '건';
+
+  const body = document.getElementById('resolvedBody');
+  if (!body) return;
+  if (filtered.length === 0) {
+    body.innerHTML = `<div class="empty"><div class="empty-icon">🎯</div><div class="empty-title">아직 해결완료된 이슈가 없습니다</div><div class="empty-sub">검증 결과 페이지에서 ✅ 해결완료 버튼을 눌러 처리하세요</div></div>`;
+    return;
+  }
+  let html = `<div class="resolved-list-row head">
+    <span>해결일자</span><span>고객번호</span><span>이슈 / 메모</span><span style="text-align:right;">금액</span><span>코드</span><span>청구월</span>
+  </div>`;
+  for (const r of filtered) {
+    const dt = (r.resolvedAt || '').substring(0, 10);
+    const amt = (r.diff || 0) > 0 ? fmtMoneyShort(r.diff) : '—';
+    html += `<div class="resolved-list-row">
+      <span style="font-size:12px;">${dt}</span>
+      <span class="issue-cust">${escapeHtml(r.custNo || '')}</span>
+      <div style="min-width:0;">
+        <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(r.reason || '—')}</div>
+        ${r.note ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">📝 ${escapeHtml(r.note)}</div>` : ''}
+      </div>
+      <span class="resolved-amount" style="text-align:right;">${amt}</span>
+      <span><span class="tag blue">${escapeHtml(r.code || '')}</span></span>
+      <span style="font-size:12px;color:var(--text-soft);">${(r.yyyymm||'').substring(0,4)}.${(r.yyyymm||'').substring(4,6)}
+        <button onclick="handleResolveClick('${r.yyyymm}','${r.custNo}','${r.code}')" class="mini-link" title="해제">✕</button>
+      </span>
+    </div>`;
+  }
+  body.innerHTML = html;
+}
+
+async function exportResolvedXLSX() {
+  const all = await db.resolved.toArray();
+  if (all.length === 0) { toast('내보낼 데이터가 없습니다', 'error'); return; }
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('해결완료 이력');
+  ws.columns = [
+    { header: '해결일자', key: 'date', width: 14 },
+    { header: '청구월', key: 'ym', width: 10 },
+    { header: '고객번호', key: 'cust', width: 14 },
+    { header: '주소', key: 'addr', width: 36 },
+    { header: '검증코드', key: 'code', width: 10 },
+    { header: '이슈사유', key: 'reason', width: 50 },
+    { header: '금액', key: 'amt', width: 14 },
+    { header: '처리메모', key: 'note', width: 30 },
+    { header: '처리자', key: 'by', width: 12 },
+  ];
+  ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF16ACE3' } };
+  all.sort((a, b) => (b.resolvedAt || '').localeCompare(a.resolvedAt || ''));
+  for (const r of all) {
+    ws.addRow({
+      date: (r.resolvedAt || '').substring(0, 10),
+      ym: r.yyyymm || '',
+      cust: r.custNo || '',
+      addr: r.주소 || '',
+      code: r.code || '',
+      reason: r.reason || '',
+      amt: r.diff || 0,
+      note: r.note || '',
+      by: r.resolvedBy || '',
+    });
+  }
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `해결완료이력_${new Date().toISOString().substring(0,10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Excel 다운로드 완료', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// V14 #7 — 고객 메모 (LocalStorage 대신 IndexedDB 사용 - 더 안정적)
+// ═══════════════════════════════════════════════════════════════
+async function getCustomerNote(custNo) {
+  if (!custNo) return null;
+  try { return await db.customerNotes.get(custNo); } catch(e) { return null; }
+}
+
+async function saveCustomerNote(custNo, text) {
+  if (!custNo) return;
+  if (!text || !text.trim()) {
+    await db.customerNotes.delete(custNo);
+    toast('메모가 삭제되었습니다', 'info');
+    return;
+  }
+  await db.customerNotes.put({
+    custNo,
+    text: text.trim(),
+    updatedAt: new Date().toISOString(),
+  });
+  toast('💾 메모가 저장되었습니다', 'success');
+}
+
+window.handleSaveMemo = async function(custNo) {
+  const ta = document.getElementById('memo-edit-' + custNo);
+  if (!ta) return;
+  await saveCustomerNote(custNo, ta.value);
+  // 현재 카테고리 페이지 다시 렌더 (메모 표시 갱신)
+  if (currentView && currentView.startsWith('cat-')) renderCategory(currentView);
+};
+
+// ═══════════════════════════════════════════════════════════════
+// V14 #8 — 검증 이력 사이드바 자동 표시
+// ═══════════════════════════════════════════════════════════════
+async function refreshHistorySidebar() {
+  const list = document.getElementById('historySidebarList');
+  if (!list) return;
+  const allVals = await db.validations.orderBy('yyyymm').reverse().toArray();
+  if (allVals.length === 0) {
+    list.innerHTML = '<div class="nav-sub-empty">검증을 실행하면 여기에 표시됩니다</div>';
+    return;
+  }
+  // 최근 12개만
+  const recent = allVals.slice(0, 12);
+  let html = '';
+  for (const v of recent) {
+    const ym = v.yyyymm || '';
+    const display = `${ym.substring(0,4)}.${ym.substring(4,6)}`;
+    const cnt = (v.results || []).length;
+    const isActive = sessionStorage.getItem('everon_last_ym') === ym;
+    html += `<div class="nav-sub-item ${isActive ? 'active' : ''}" onclick="loadHistoryMonth('${ym}')" title="클릭해서 ${display} 결과 복원">
+      <span style="flex:1;">📅 ${display}</span>
+      <span style="font-size:10px;color:var(--text-muted);">${cnt}</span>
+    </div>`;
+  }
+  list.innerHTML = html;
+}
+
+window.loadHistoryMonth = async function(yyyymm) {
+  try {
+    const v = await db.validations.get(yyyymm);
+    if (!v || !v.results) { toast('해당 월 데이터를 찾을 수 없습니다', 'error'); return; }
+    validationResults = v.results;
+    sessionStorage.setItem('everon_last_ym', yyyymm);
+    updateBadges();
+    await refreshHistorySidebar();
+    navigate('dashboard');
+    toast(`📅 ${yyyymm.substring(0,4)}년 ${yyyymm.substring(4,6)}월 결과로 전환됨`, 'success');
+  } catch(e) {
+    console.warn(e);
+    toast('이력 로드 실패', 'error');
+  }
+};
+
+// V14 — runValidation 이후 사이드바도 갱신되도록 hook
+const _origRunValidation = runValidation;
+window.runValidation = async function() {
+  await _origRunValidation.apply(this, arguments);
+  try { await refreshHistorySidebar(); } catch(e) {}
+  try { await refreshUntrackedBadge(); } catch(e) {}
+};
 
 // 자동 로그인 (세션 유지)
 if (sessionStorage.getItem('everon_auth') === '1') {
