@@ -621,14 +621,15 @@
 
         <!-- V12 — 4개 카드: 기본요금 과다 / 전력요금 상이 / 환급예상 / 사용량 (V14 색상 강화) -->
         <!-- V15 #3 — 환급예상 카드를 3분할: 신뢰 / 확인필요 / 미관리(B등급) -->
+        <!-- V15.2 — KPI 카드 클릭 → 다운로드 팝업 -->
         <div class="dash-grid">
-          <div class="stat-card danger"><div class="stat-label">기본요금 과다청구</div><div class="stat-value danger" id="ds-crit">0건</div><div class="stat-sub" id="ds-crit-sub">-</div></div>
-          <div class="stat-card violet" style="border-left:3px solid var(--accent-violet);">
+          <div class="stat-card danger" style="cursor:pointer;" onclick="downloadKpiExcel('baseFee')" title="클릭하면 엑셀 다운로드"><div class="stat-label">기본요금 과다청구</div><div class="stat-value danger" id="ds-crit">0건</div><div class="stat-sub" id="ds-crit-sub">-</div></div>
+          <div class="stat-card violet" style="border-left:3px solid var(--accent-violet);cursor:pointer;" onclick="downloadKpiExcel('trusted')" title="클릭하면 엑셀 다운로드">
             <div class="stat-label">🟢 신뢰 환급 추정액</div>
             <div class="stat-value blue" id="ds-refund-trusted">₩0</div>
             <div class="stat-sub" id="ds-refund-trusted-sub">S/A등급, 비율·금액 정상</div>
           </div>
-          <div class="stat-card warn" style="border-left:3px solid var(--warn);">
+          <div class="stat-card warn" style="border-left:3px solid var(--warn);cursor:pointer;" onclick="downloadKpiExcel('review')" title="클릭하면 엑셀 다운로드">
             <div class="stat-label">🟡 확인 필요 금액</div>
             <div class="stat-value warn" id="ds-refund-review">₩0</div>
             <div class="stat-sub" id="ds-refund-review-sub">비율 과다·고액 차이</div>
@@ -638,10 +639,10 @@
 
         <!-- V15 #3 — 보조 KPI 한 줄: 전체 후보, B등급 제외, 가산금/초과요금 -->
         <div class="dash-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px;">
-          <div class="stat-card"><div class="stat-label">📊 전체 환급 후보 (참고)</div><div class="stat-value" id="ds-refund-total" style="font-size:18px;color:var(--text-soft);">₩0</div><div class="stat-sub">룰상 잡힌 전체 차이금액</div></div>
-          <div class="stat-card"><div class="stat-label">⚪ B등급 제외 금액</div><div class="stat-value" id="ds-refund-excluded" style="font-size:18px;color:var(--text-muted);">₩0</div><div class="stat-sub">기간 불일치로 계산 보류</div></div>
-          <div class="stat-card warn"><div class="stat-label">⚠️ 전력요금 상이</div><div class="stat-value warn" id="ds-warn">0건</div><div class="stat-sub" id="ds-warn-sub">-</div></div>
-          <div class="stat-card"><div class="stat-label">💰 가산금 + 초과요금</div><div class="stat-value violet" id="ds-extras" style="font-size:18px;">₩0</div><div class="stat-sub" id="ds-extras-sub">부수 회수액</div></div>
+          <div class="stat-card" style="cursor:pointer;" onclick="downloadKpiExcel('allCandidate')" title="클릭하면 엑셀 다운로드"><div class="stat-label">📊 전체 환급 후보 (참고)</div><div class="stat-value" id="ds-refund-total" style="font-size:18px;color:var(--text-soft);">₩0</div><div class="stat-sub">룰상 잡힌 전체 차이금액</div></div>
+          <div class="stat-card" style="cursor:pointer;" onclick="downloadKpiExcel('excluded')" title="클릭하면 엑셀 다운로드"><div class="stat-label">⚪ B등급 제외 금액</div><div class="stat-value" id="ds-refund-excluded" style="font-size:18px;color:var(--text-muted);">₩0</div><div class="stat-sub">기간 불일치로 계산 보류</div></div>
+          <div class="stat-card warn" style="cursor:pointer;" onclick="downloadKpiExcel('energyAll')" title="클릭하면 엑셀 다운로드"><div class="stat-label">⚠️ 전력요금 상이</div><div class="stat-value warn" id="ds-warn">0건</div><div class="stat-sub" id="ds-warn-sub">-</div></div>
+          <div class="stat-card" style="cursor:pointer;" onclick="downloadKpiExcel('extras')" title="클릭하면 엑셀 다운로드"><div class="stat-label">💰 가산금 · 초과요금</div><div class="stat-value violet" id="ds-extras" style="font-size:18px;">₩0</div><div class="stat-sub" id="ds-extras-sub">부수 회수액</div></div>
         </div>
 
         <div class="dash-row">
@@ -3631,9 +3632,15 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
             reason: `${reasonPrefix} / +${fmt(totalDiff)}kWh 더청구`,
             detail: refundTier === 'excluded'
               ? `V15: B등급(기간 불일치)으로 환급액 자동 계산 제외 — 룰상 차이는 ${fmt(totalRefund)}원이지만 신뢰 불가`
-              : `환급 예상 = 경부하 ${fmt(Math.round(refundLight))}원 + 중부하 ${fmt(Math.round(refundMid))}원 + 최대부하 ${fmt(Math.round(refundPeak))}원 = ${fmt(totalRefund)}원 (한전이 관제보다 ${totalPct.toFixed(1)}% 많이 청구, 비율 ${ratio.toFixed(2)}배)`,
+              : `[시간대별 차이] 경부하: ${lightDiff > 0 ? '+' : ''}${fmt(lightDiff)}kWh × ${fmt(rLight)}원 = ${fmt(Math.round(refundLight))}원 | 중부하: ${midDiff > 0 ? '+' : ''}${fmt(midDiff)}kWh × ${fmt(rMid)}원 = ${fmt(Math.round(refundMid))}원 | 최대부하: ${peakDiff > 0 ? '+' : ''}${fmt(peakDiff)}kWh × ${fmt(rPeak)}원 = ${fmt(Math.round(refundPeak))}원 → 총 ${fmt(totalRefund)}원 (비율 ${ratio.toFixed(2)}배)`,
             diff: totalRefund,          // V12 — diff는 원 단위 환급액
             usageDiff: totalDiff,       // 참고: kWh 차이
+            // V15.2 — 시간대별 세부 (엑셀 + 화면 표시용)
+            lightDiff, midDiff, peakDiff,           // kWh 차이
+            rLight, rMid, rPeak,                     // 단가
+            refundLight: Math.round(refundLight),    // 금액
+            refundMid: Math.round(refundMid),
+            refundPeak: Math.round(refundPeak),
             ratio: ratio,               // V13 — 한전/관제 비율
             dashTrusted: dashTrusted,   // V13 — 대시보드 집계 여부 (V15에서는 refundTier로 대체 권장)
             matchGrade: matchGrade,     // V15 — 매칭 신뢰등급
@@ -4836,7 +4843,7 @@ async function exportExcel(filterCat) {
       ok: 'FFD1FAE5',    // 녹색 체크 — V5
       orange: 'FFFED7AA', // 주황 이상치 — V5
       // 헤더 그룹 (#1 페어 배치용)
-      hdrInfo:     'FF1F2A44', // 남색 — 기본정보
+      hdrInfo:     'FFD6E4F0', // V15.2 — 옅은 남색 (검정 글씨와 대비 좋음)
       hdrKepco:    'FFE0F2FE', // 옅은 하늘 — 한전 값
       hdrMeter:    'FFFEF3C7', // 옅은 노랑 — 관제 값
       hdrCalc:     'FFE8F7FD', // 에버온 연파랑 — 계산값
@@ -4869,7 +4876,7 @@ async function exportExcel(filterCat) {
       // V14 #5 — 사용기간 컬럼 추가, V14 #2,3 — 전압구분/관할사업소 추가
       // V15 #2,#3 — 매칭신뢰등급(S/A/B/C), 환급분류(신뢰/확인필요/제외) 추가
       // V15.1 #2 — 검침일수 별도 컬럼
-      { title: '기본 정보', color: COLORS.hdrInfo, textColor: 'FFFFFFFF', cols: ['고객번호', '주소/충전소', '계약종별', '전압구분', '관할사업소', '청구월', '사용기간', '검침일수', '납기일', '매칭_신뢰등급', '환급_분류'] },
+      { title: '기본 정보', color: COLORS.hdrInfo, textColor: 'FF1F2A44', cols: ['고객번호', '주소/충전소', '계약종별', '전압구분', '관할사업소', '청구월', '사용기간', '검침일수', '납기일', '매칭_신뢰등급', '환급_분류'] },
       // V15.1 #10 — 계약전력 = 빌코리아 / 정격용량 = 관제 (분리)
       { title: '전력 (빌코리아 계약전력 / 관제 정격용량)', color: COLORS.hdrKepco, cols: ['빌코리아_계약전력', '관제_정격용량합', '관제_충전기수', '정격용량-계약 차이'] },
       { title: '총사용량 (한전 청구 vs 관제 사용량 기준 재계산)', color: COLORS.hdrMeter, cols: ['한전청구_사용량', '관제기준_재계산_총사용량', '차이_kWh', '충전기종류', 'AC허용치'] },
@@ -5006,6 +5013,12 @@ async function exportExcel(filterCat) {
         // 고객번호 셀만 진하게
         ws.getCell(rowIdx, 1).fill = fill(levelFill[worstLevel]);
         ws.getCell(rowIdx, 1).font = { bold: true };
+      }
+
+      // V15.2 — 납기일 빈값 빨강 (컬럼 9)
+      if (!dueFmt) {
+        ws.getCell(rowIdx, 9).value = '미입력';
+        ws.getCell(rowIdx, 9).font = { bold: true, color: { argb: 'FFDC2626' } };
       }
 
       // 각 이슈별 해당 셀 색칠 + 코멘트
@@ -5216,14 +5229,16 @@ async function exportExcel(filterCat) {
             continue;
           }
           rowObj[`i${n}_code`] = iss.code;
-          rowObj[`i${n}_reason`] = iss.reason || iss.msg || '';
+          // V15.2 — reason + detail 합쳐서 표시 (사유 + 시간대별 세부가 한눈에)
+          const issDetail = iss.detail || '';
+          rowObj[`i${n}_reason`] = (iss.reason || iss.msg || '') + (issDetail ? '\n' + issDetail : '');
           // 한전청구 / 재계산 값 — code별 매핑
           let kepcoVal = '', calcVal = '';
           if (iss.code === 'A2' || iss.code === 'A2p' || iss.code === 'A3') {
             kepcoVal = b.기본요금 || '';
             calcVal = (iss.diff != null && b.기본요금) ? b.기본요금 - iss.diff : '';
           } else if (iss.code === 'A5') {
-            kepcoVal = (b.사용량 || b.경부하사용량 || 0) ? b.사용량 : '';
+            kepcoVal = b.사용량 || '';
             calcVal = (m.경부하합 || 0) + (m.중부하합 || 0) + (m.최대부하합 || 0) || '';
           } else if (iss.code === 'A1') {
             kepcoVal = b.사용량 || '';
@@ -5269,6 +5284,13 @@ async function exportExcel(filterCat) {
         } else if (grade === 'A' || grade === 'S') {
           newRow.getCell('grade').fill = fill('FFD1FAE5');
         }
+
+        // V15.2 — 납기일 빈값이면 빨간 글씨로 경고
+        if (!dueFmt) {
+          newRow.getCell('due').value = '미입력';
+          newRow.getCell('due').font = { bold: true, color: { argb: 'FFDC2626' } };
+        }
+
         // 환급 분류 색상
         if (tier === '신뢰') {
           newRow.getCell('tier').fill = fill('FFD1FAE5');
@@ -5980,6 +6002,162 @@ async function renderExcludedList() {
   body.innerHTML = html;
 }
 
+// V15.2 — KPI 카드 클릭 → 엑셀 다운로드
+window.downloadKpiExcel = async function(type) {
+  if (!validationResults || validationResults.length === 0) {
+    toast('검증 결과가 없습니다', 'error');
+    return;
+  }
+  const excludedSet = await getExcludedSet();
+  const results = validationResults.filter(r => r.bill && !excludedSet.has(r.bill.custNo));
+
+  // 타입별 필터 + 라벨
+  const REFUND = new Set(['A2', 'A2p', 'A3', 'A5']);
+  let filtered = [], label = '', filename = '';
+
+  if (type === 'baseFee') {
+    // 기본요금 과다청구: A2/A2p/A3
+    filtered = results.filter(r => r.issues.some(i => (i.code === 'A2' || i.code === 'A2p' || i.code === 'A3') && i.level === 'critical'));
+    label = `기본요금 과다청구 ${filtered.length}건`;
+    filename = '기본요금_과다청구';
+  } else if (type === 'trusted') {
+    // 신뢰 환급: A2/A2p/A3 + A5 trusted + 초과요금
+    filtered = results.filter(r => r.issues.some(i =>
+      ((i.code === 'A2' || i.code === 'A2p' || i.code === 'A3') && i.level === 'critical') ||
+      (i.code === 'A5' && (i.refundTier === 'trusted' || (!i.refundTier && i.dashTrusted)))
+    ) || (r.bill && r.bill.초과요금 > 0));
+    label = `신뢰 환급 추정액 ${filtered.length}건`;
+    filename = '신뢰_환급_추정액';
+  } else if (type === 'review') {
+    // 확인필요: A5 review
+    filtered = results.filter(r => r.issues.some(i => i.code === 'A5' && (i.refundTier === 'review' || (!i.refundTier && !i.dashTrusted && i.level === 'critical'))));
+    label = `확인 필요 금액 ${filtered.length}건`;
+    filename = '확인필요_금액';
+  } else if (type === 'allCandidate') {
+    // 전체 환급 후보: REFUND_CODES 전체
+    filtered = results.filter(r => r.issues.some(i => REFUND.has(i.code) && i.level === 'critical' && (i.diff || 0) > 0));
+    label = `전체 환급 후보 ${filtered.length}건`;
+    filename = '전체_환급_후보';
+  } else if (type === 'excluded') {
+    // B등급 제외: A5 excluded
+    filtered = results.filter(r => r.issues.some(i => i.code === 'A5' && i.refundTier === 'excluded'));
+    label = `B등급 제외 ${filtered.length}건`;
+    filename = 'B등급_제외';
+  } else if (type === 'energyAll') {
+    // 전력요금 상이: A5 전체
+    filtered = results.filter(r => r.issues.some(i => i.code === 'A5'));
+    label = `전력요금 상이 ${filtered.length}건`;
+    filename = '전력요금_상이';
+  } else if (type === 'extras') {
+    // 가산금 + 초과요금: B안 (분리 시트)
+    const surchargeRows = results.filter(r => r.bill && r.bill.가산금 > 0);
+    const excessRows = results.filter(r => r.bill && r.bill.초과요금 > 0);
+    label = `가산금 ${surchargeRows.length}건 / 초과요금 ${excessRows.length}건`;
+    // 둘 다 합쳐서 filtered (시트는 분리)
+    filtered = results.filter(r => r.bill && (r.bill.가산금 > 0 || r.bill.초과요금 > 0));
+    filename = '가산금_초과요금';
+  }
+
+  if (filtered.length === 0) {
+    toast(`해당 케이스가 없습니다 (${label || type})`, 'info');
+    return;
+  }
+
+  if (!confirm(`📥 ${label}\n\n엑셀 다운로드 하시겠습니까?`)) return;
+
+  // 간이 엑셀 생성 (카테고리 시트 1장)
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(filename || 'KPI', { views: [{ state: 'frozen', ySplit: 1 }] });
+  ws.columns = [
+    { header: '고객번호', key: 'cust', width: 14 },
+    { header: '주소', key: 'addr', width: 36 },
+    { header: '전압', key: 'volt', width: 8 },
+    { header: '관할사업소', key: 'branch', width: 13 },
+    { header: '청구월', key: 'ym', width: 10 },
+    { header: '사용기간', key: 'period', width: 23 },
+    { header: '검침일수', key: 'days', width: 9 },
+    { header: '납기일', key: 'due', width: 11 },
+    { header: '매칭등급', key: 'grade', width: 10 },
+    { header: '환급분류', key: 'tier', width: 12 },
+    { header: '코드', key: 'code', width: 8 },
+    { header: '사유 + 계산근거', key: 'reason', width: 70 },
+    { header: '차이(원)', key: 'diff', width: 14, style: { numFmt: '#,##0;[Red]-#,##0' } },
+    { header: '가산금', key: 'surcharge', width: 12, style: { numFmt: '#,##0' } },
+    { header: '초과요금', key: 'excess', width: 12, style: { numFmt: '#,##0' } },
+  ];
+  const fill = (c) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: c } });
+  ws.getRow(1).font = { bold: true, size: 11, color: { argb: 'FF1F2A44' } };
+  ws.getRow(1).fill = fill('FFD6E4F0');
+  ws.getRow(1).height = 26;
+  ws.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+  for (const r of filtered) {
+    const b = r.bill || {}, m = r.meter || {};
+    const fmtPD = (d) => d ? (d.length === 8 ? `${d.substring(0,4)}-${d.substring(4,6)}-${d.substring(6,8)}` : d) : '';
+    const period = (b.사용시작 || b.사용끝) ? `${fmtPD(b.사용시작)} ~ ${fmtPD(b.사용끝)}` : '';
+    const dueFmt = b.납기일 ? `${b.납기일.substring(0,4)}-${b.납기일.substring(4,6)}-${b.납기일.substring(6,8)}` : '';
+    // 이슈 중 해당 타입에 매칭되는 것
+    const mainIssues = r.issues.filter(i => {
+      if (type === 'baseFee') return (i.code === 'A2' || i.code === 'A2p' || i.code === 'A3') && i.level === 'critical';
+      if (type === 'trusted') return ((i.code === 'A2' || i.code === 'A2p' || i.code === 'A3') && i.level === 'critical') || (i.code === 'A5' && i.refundTier === 'trusted');
+      if (type === 'review') return i.code === 'A5' && i.refundTier === 'review';
+      if (type === 'allCandidate') return new Set(['A2','A2p','A3','A5']).has(i.code) && i.level === 'critical';
+      if (type === 'excluded') return i.code === 'A5' && i.refundTier === 'excluded';
+      if (type === 'energyAll') return i.code === 'A5';
+      return true;
+    });
+    const mainIss = mainIssues[0] || {};
+    const allReasons = mainIssues.map(i => `[${i.code}] ${i.reason || ''}${i.detail ? '\n' + i.detail : ''}`).join('\n---\n');
+    const totalDiff = mainIssues.reduce((s, i) => s + (i.diff || 0), 0);
+    const a5 = mainIssues.find(i => i.code === 'A5');
+    let tier = '';
+    if (a5) {
+      if (a5.refundTier === 'trusted') tier = '신뢰';
+      else if (a5.refundTier === 'review') tier = '확인필요';
+      else if (a5.refundTier === 'excluded') tier = '제외(B등급)';
+    }
+
+    const row = ws.addRow({
+      cust: b.custNo || '',
+      addr: b.주소 || m.충전소명 || '',
+      volt: b.전압구분라벨 || '',
+      branch: b.관할사업소 || '',
+      ym: b.billYyyymm || '',
+      period: period,
+      days: b._검침일수 ? `${b._검침일수}일` : '',
+      due: dueFmt || '미입력',
+      grade: r.matchGrade || '',
+      tier: tier,
+      code: mainIssues.map(i => i.code).join('/'),
+      reason: allReasons,
+      diff: totalDiff,
+      surcharge: b.가산금 || 0,
+      excess: b.초과요금 || 0,
+    });
+    row.getCell('cust').numFmt = '@';
+    row.alignment = { vertical: 'top', wrapText: true };
+    // 납기일 빈값 빨강
+    if (!dueFmt) {
+      row.getCell('due').font = { bold: true, color: { argb: 'FFDC2626' } };
+    }
+    // 차이 색상
+    if (totalDiff > 0) {
+      row.getCell('diff').font = { bold: true, color: { argb: 'FFB91C1C' } };
+    }
+  }
+  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: filtered.length + 1, column: 15 } };
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${filename || 'KPI'}_${new Date().toISOString().substring(0,10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`📥 ${label} 다운로드 완료`, 'success');
+};
+
 // V15.2 — 헬프 모달 탭 전환
 window.switchHelpTab = function(n) {
   document.getElementById('helpContent1').style.display = n === 1 ? '' : 'none';
@@ -6354,8 +6532,8 @@ async function exportResolvedXLSX() {
     { header: '처리메모', key: 'note', width: 30 },
     { header: '처리자', key: 'by', width: 12 },
   ];
-  ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF16ACE3' } };
+  ws.getRow(1).font = { bold: true, color: { argb: 'FF1F2A44' } };
+  ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD6E4F0' } };
   all.sort((a, b) => (b.resolvedAt || '').localeCompare(a.resolvedAt || ''));
   for (const r of all) {
     ws.addRow({
