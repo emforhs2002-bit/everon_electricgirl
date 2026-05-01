@@ -178,6 +178,10 @@
   .icon-btn { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-soft); font-size: 16px; transition: all 0.15s; }
   .icon-btn:hover { background: var(--bg); color: var(--everon-blue); }
   .icon-btn.danger:hover { color: var(--danger); }
+  /* V15.3 #4 — 탭 버튼 (헬프 모달 등) */
+  .tab-btn { padding: 12px 20px; font-size: 13px; font-weight: 700; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; color: var(--text-muted); transition: color 0.15s, border-color 0.15s; }
+  .tab-btn:hover { color: var(--everon-blue); }
+  .tab-btn.active { border-bottom-color: var(--everon-blue); color: var(--everon-blue); }
 
   .workspace { display: flex; flex: 1; overflow: hidden; }
   .sidebar { width: 232px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 12px; overflow-y: auto; flex-shrink: 0; }
@@ -532,7 +536,7 @@
       <div style="font-size:13px;flex-shrink:0;">🔐</div>
       <div class="login-foot-info-text">인가된 사용자만 접근할 수 있습니다.<br>접속 기록과 검증 이력은 내부 감사 기준에 따라 저장됩니다.</div>
     </div>
-    <div class="login-foot">Everon Power Billing Audit System · V15.2</div>
+    <div class="login-foot">Everon Power Billing Audit System · V15.3</div>
   </div>
 </div>
 
@@ -541,7 +545,7 @@
   <div class="topbar">
     <div class="topbar-left">
       <img src="data:image/png;base64,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" alt="everon" onclick="navigate('dashboard')" title="대시보드로 이동" style="height:26px;cursor:pointer;">
-      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V15.2</span></div>
+      <div class="topbar-title">전기요금 검증 시스템 <span style="color:var(--text-muted);font-weight:400;margin-left:6px;">V15.3</span></div>
     </div>
     <div class="topbar-right">
       <span class="topbar-user" id="topbarUser">everon</span>
@@ -3154,16 +3158,29 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
       }
 
       // 2) 기본요금 = 단가(정상값 기준) × 전력 계산
+      // V15.2 정정 — 일할계산 분모를 실제 청구월 일수로 (28/30/31)
+      //   진우 지적: 2월 28일 / 30일 4월 / 31일 7월 등 월별 일수 다른데 30일 고정으로 잘못 계산됨
+      //   한전은 청구월의 실제 일수로 계산함 (예: 2026.02 = 28일, 2026.04 = 30일, 2026.07 = 31일)
       const days = calcBillDays(b.사용시작, b.사용끝);
       const isProrated = days > 0 && days < 28;
       const ePow = isLow ? b.계약전력 : b.요금적용전력;
 
+      // V15.2 — 청구월의 실제 일수 (기본 30일, 빌Yyyymm 기준 자동 계산)
+      let monthDays = 30;
+      if (b.billYyyymm && b.billYyyymm.length >= 6) {
+        const yr = +b.billYyyymm.substring(0, 4);
+        const mo = +b.billYyyymm.substring(4, 6);
+        if (yr > 2000 && mo >= 1 && mo <= 12) {
+          monthDays = new Date(yr, mo, 0).getDate();  // 해당 월 마지막 일
+        }
+      }
+
       if (ePow > 0 && stdRate > 0) {
         const full = stdRate * ePow;
-        const exp = isProrated ? Math.round(full * days / 30) : full;
+        const exp = isProrated ? Math.round(full * days / monthDays) : full;  // V15.2 — monthDays 사용
         calcs.기본요금_한전 = b.기본요금;
         calcs.기본요금_계산 = exp;
-        calcs.기본요금_식 = `${fmt(stdRate)} × ${ePow}kW${isProrated ? ` × ${days}/30일` : ''} (${isLow ? '저압' : '고압'})`;
+        calcs.기본요금_식 = `${fmt(stdRate)} × ${ePow}kW${isProrated ? ` × ${days}/${monthDays}일` : ''} (${isLow ? '저압' : '고압'})`;
 
         const diff = b.기본요금 - exp;
         // V12 — 기본요금 허용치 1% (빌코리아 vs 빌코리아, 원단위 반올림 오차만 허용)
@@ -3177,7 +3194,7 @@ function validate(bills, meterData, prevBills, historyBillsByCust) {
             reason: isOvercharge
               ? `기본요금 과다청구 / 한전: ${fmt(b.기본요금)}원 / 계산: ${fmt(exp)}원 / +${fmt(diff)}원 더청구`
               : `기본요금 과소청구 / 한전: ${fmt(b.기본요금)}원 / 계산: ${fmt(exp)}원 / ${fmt(diff)}원 덜청구`,
-            detail: `${fmt(stdRate)}원 × ${ePow}kW${isProrated ? ` × ${days}/30일` : ''} = ${fmt(exp)}원`,
+            detail: `${fmt(stdRate)}원 × ${ePow}kW${isProrated ? ` × ${days}/${monthDays}일` : ''} = ${fmt(exp)}원`,
             diff,
             tag: isOvercharge ? null : 'green',
           });
@@ -4952,13 +4969,18 @@ async function exportExcel(filterCat) {
         b._검침일수 ? `${b._검침일수}일` : '',                                 // V15.1 #2 — 검침일수 별도
         dueFmt,                                                               // V14 #4
         r.matchGrade || (r.meterMatched ? 'A' : 'C'),                         // V15 #2
-        (() => {                                                              // V15 #3 — A5 환급 분류
+        (() => {                                                              // V15 #3 — A5 환급 분류 (V15.2 — A2/A2p/A3 + 초과요금 추가)
           const a5 = (r.issues || []).find(i => i.code === 'A5');
-          if (!a5) return '';
-          if (a5.refundTier === 'trusted') return '신뢰';
-          if (a5.refundTier === 'review') return '확인필요';
-          if (a5.refundTier === 'excluded') return '제외(B등급)';
-          return a5.dashTrusted ? '신뢰' : '확인필요';  // V14 호환
+          const baseFee = (r.issues || []).find(i => i.code === 'A2' || i.code === 'A2p' || i.code === 'A3');
+          if (a5) {
+            if (a5.refundTier === 'trusted') return '신뢰';
+            if (a5.refundTier === 'review') return '확인필요';
+            if (a5.refundTier === 'excluded') return '제외(B등급)';
+            return a5.dashTrusted ? '신뢰' : '확인필요';
+          }
+          if (baseFee) return '신뢰';
+          if (b.초과요금 > 0) return '신뢰';
+          return '';
         })(),
         // V15.1 #10 — 전력: 빌코리아 계약전력 / 관제 정격용량 (분리 표시)
         b.계약전력 || '',                                                      // 빌코리아 계약전력
@@ -5148,13 +5170,17 @@ async function exportExcel(filterCat) {
         { header: '매칭_신뢰등급', key: 'grade', width: 11 },
         { header: '환급_분류', key: 'tier', width: 12 },
       ];
-      // 이슈 N개 셋 — 각 셋은 (코드 / 사유 / 한전청구 / 재계산 / 차이)
+      // V15.2 — 이슈 N개 셋 — 코드/사유/한전/재계산/차이 + A5 시간대별 차이·환급
       const issueColSet = (n) => [
         { header: `이슈${n}_코드`, key: `i${n}_code`, width: 8 },
         { header: `이슈${n}_사유`, key: `i${n}_reason`, width: 38 },
         { header: `이슈${n}_한전청구`, key: `i${n}_kepco`, width: 13, style: { numFmt: '#,##0' } },
         { header: `이슈${n}_재계산`, key: `i${n}_calc`, width: 13, style: { numFmt: '#,##0' } },
-        { header: `이슈${n}_차이`, key: `i${n}_diff`, width: 13, style: { numFmt: '#,##0;[Red]-#,##0' } },  // V15.1 #13 — 차이 강조
+        { header: `이슈${n}_차이(원)`, key: `i${n}_diff`, width: 13, style: { numFmt: '#,##0;[Red]-#,##0' } },
+        // V15.2 — A5 시간대별 차이 kWh + 단가 (A5 이슈일 때만 채워짐)
+        { header: `이슈${n}_경부하 차이(kWh)`, key: `i${n}_lightDiff`, width: 13, style: { numFmt: '#,##0;[Red]-#,##0' } },
+        { header: `이슈${n}_중부하 차이(kWh)`, key: `i${n}_midDiff`, width: 13, style: { numFmt: '#,##0;[Red]-#,##0' } },
+        { header: `이슈${n}_최대부하 차이(kWh)`, key: `i${n}_peakDiff`, width: 13, style: { numFmt: '#,##0;[Red]-#,##0' } },
       ];
       const issueCols = [];
       for (let n = 1; n <= maxIssues; n++) issueCols.push(...issueColSet(n));
@@ -5192,14 +5218,19 @@ async function exportExcel(filterCat) {
         const period = (b.사용시작 || b.사용끝) ? `${fmtPD(b.사용시작)} ~ ${fmtPD(b.사용끝)}` : '';
         const dueFmt = b.납기일 ? `${b.납기일.substring(0,4)}-${b.납기일.substring(4,6)}-${b.납기일.substring(6,8)}` : '';
         const grade = g.matchGrade || '';
-        // 환급 분류는 A5 이슈 기준
+        // V15.2 정정 — 환급 분류: A5 우선, A2/A2p/A3 있으면 "신뢰", 초과요금도 신뢰
         let tier = '';
         const a5 = g.issues.find(i => i.code === 'A5');
+        const baseFee = g.issues.find(i => i.code === 'A2' || i.code === 'A2p' || i.code === 'A3');
         if (a5) {
           if (a5.refundTier === 'trusted') tier = '신뢰';
           else if (a5.refundTier === 'review') tier = '확인필요';
           else if (a5.refundTier === 'excluded') tier = '제외(B등급)';
           else tier = a5.dashTrusted ? '신뢰' : '확인필요';
+        } else if (baseFee) {
+          tier = '신뢰';
+        } else if (b.초과요금 > 0) {
+          tier = '신뢰';
         }
         const critN = g.issues.filter(i => i.level === 'critical').length;
         const warnN = g.issues.filter(i => i.level === 'warning').length;
@@ -5226,6 +5257,9 @@ async function exportExcel(filterCat) {
             rowObj[`i${n}_kepco`] = '';
             rowObj[`i${n}_calc`] = '';
             rowObj[`i${n}_diff`] = '';
+            rowObj[`i${n}_lightDiff`] = '';
+            rowObj[`i${n}_midDiff`] = '';
+            rowObj[`i${n}_peakDiff`] = '';
             continue;
           }
           rowObj[`i${n}_code`] = iss.code;
@@ -5250,6 +5284,16 @@ async function exportExcel(filterCat) {
           rowObj[`i${n}_kepco`] = kepcoVal;
           rowObj[`i${n}_calc`] = calcVal;
           rowObj[`i${n}_diff`] = iss.diff != null ? iss.diff : '';
+          // V15.2 — A5 시간대별 차이 kWh (A5 이슈에서만 채움)
+          if (iss.code === 'A5') {
+            rowObj[`i${n}_lightDiff`] = iss.lightDiff != null ? iss.lightDiff : '';
+            rowObj[`i${n}_midDiff`] = iss.midDiff != null ? iss.midDiff : '';
+            rowObj[`i${n}_peakDiff`] = iss.peakDiff != null ? iss.peakDiff : '';
+          } else {
+            rowObj[`i${n}_lightDiff`] = '';
+            rowObj[`i${n}_midDiff`] = '';
+            rowObj[`i${n}_peakDiff`] = '';
+          }
         }
         const newRow = cs.addRow(rowObj);
 
@@ -5257,9 +5301,9 @@ async function exportExcel(filterCat) {
         newRow.getCell('cust').numFmt = '@';
         newRow.alignment = { vertical: 'top', wrapText: true };
 
-        // V15.1 #12 — Zebra striping
+        // V15.1 #12 — Zebra striping (V15.3: cellCount → columnCount, 행마다 일관성)
         if (rowIdx % 2 === 1) {
-          for (let c = 1; c <= newRow.cellCount; c++) {
+          for (let c = 1; c <= cs.columnCount; c++) {
             newRow.getCell(c).fill = fill('FFFAFBFD');
           }
         }
@@ -5530,23 +5574,26 @@ async function saveSettings() {
   // V15.2 — 검증결과 캐시 무효화 (오래된 검증 결과로 화면 그리는 거 방지)
   invalidateValidationCache();
 
-  // V15.2 — "반영 안되는 것처럼 보임" 버그 정정: 저장 후 재검증 안내/제안
+  // V15.2 정정 — 저장 후 모든 월 일괄 재검증 (현재 월만 X, 진우 지적: "숫자 바꾸고 재검증 눌러도 똑같음")
   toast('설정이 저장되었습니다', 'success');
   closeModal('settings');
 
-  // 검증 결과가 이미 있는 경우 → 재검증 제안
-  if (validationResults && validationResults.length > 0) {
-    setTimeout(() => {
-      if (confirm('설정이 저장되었습니다.\n\n검증 결과는 이전 설정 기준으로 계산된 값이라 새 설정이 반영되지 않습니다.\n\n지금 다시 검증하시겠습니까?\n\n(예: 새 설정으로 즉시 재검증\n 아니오: 다음 업로드 때부터 적용)')) {
-        // 현재 메모리에 있는 데이터로 재검증
-        if (typeof runValidation === 'function' && billData && meterData) {
-          runValidation();
-        } else {
-          toast('재검증을 위해 파일을 다시 업로드하거나 검증 이력에서 월을 선택하세요', 'info');
+  // 검증 결과가 이미 있는 경우 → 전체 월 일괄 재검증 제안
+  try {
+    const monthCount = await db.months.count();
+    if (monthCount > 0) {
+      setTimeout(() => {
+        if (confirm(`설정이 저장되었습니다.\n\n저장된 ${monthCount}개월 검증 결과는 이전 설정 기준으로 계산된 값입니다.\n\n전체 월(${monthCount}개월) 일괄 재검증을 지금 실행하시겠습니까?\n\n(예: 새 설정으로 모든 월 즉시 재검증\n 아니오: 다음 업로드 또는 수동 재검증 시까지 적용 안 됨)`)) {
+          // 전체 월 일괄 재검증 — 모든 월에 새 설정 적용
+          if (typeof runAllValidations === 'function') {
+            runAllValidations();
+          } else {
+            toast('일괄 재검증 함수를 찾을 수 없습니다', 'error');
+          }
         }
-      }
-    }, 100);
-  }
+      }, 100);
+    }
+  } catch(e) { console.warn('post-save reval:', e); }
 }
 function resetSettings() { settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); fillSettings(); }
 
@@ -5866,6 +5913,8 @@ window.addExcludedCustomer = async function() {
     toast(`✅ 제외 추가됨: ${cust}`, 'success');
     await refreshExcludedBadge();
     renderExcludedList();
+    // V15.3 #1 — 다른 화면도 자동 갱신 (사용자 페이지 다시 클릭 안 해도 반영)
+    refreshDependentViews();
   } catch(e) {
     console.warn(e);
     toast('추가 실패', 'error');
@@ -5879,8 +5928,27 @@ window.removeExcludedCustomer = async function(custNo) {
     toast(`해제됨: ${custNo}`, 'info');
     await refreshExcludedBadge();
     renderExcludedList();
+    // V15.3 #1 — 해제 후에도 다른 화면 자동 갱신
+    refreshDependentViews();
   } catch(e) { console.warn(e); }
 };
+
+// V15.3 #1 — 제외 목록 변경 시 영향받는 다른 화면 갱신
+function refreshDependentViews() {
+  // 검증 결과 캐시 무효화 (다음에 다시 로드할 때 새로 가져옴)
+  if (typeof invalidateValidationCache === 'function') {
+    invalidateValidationCache();
+  }
+  // 현재 보고 있는 view 자동 재렌더
+  const v = currentView;
+  try {
+    if (v === 'dashboard') renderDashboard();
+    else if (v && v.startsWith('cat-')) renderCategory(v);
+    else if (v === 'untracked') renderUntracked();
+    else if (v === 'utilization') renderUtilization();
+    else if (v === 'refunds') renderRefundsTracking();
+  } catch(e) { console.warn('refreshDependentViews:', e); }
+}
 
 window.importExcludedCSV = async function(event) {
   const file = event.target.files && event.target.files[0];
@@ -5913,6 +5981,7 @@ window.importExcludedCSV = async function(event) {
     toast(`✅ ${added}건 추가, ${skipped}건 건너뜀`, 'success');
     await refreshExcludedBadge();
     renderExcludedList();
+    refreshDependentViews();  // V15.3 #1
   } catch(e) {
     console.warn(e);
     toast('일괄 추가 실패', 'error');
@@ -6081,7 +6150,14 @@ window.downloadKpiExcel = async function(type) {
     { header: '환급분류', key: 'tier', width: 12 },
     { header: '코드', key: 'code', width: 8 },
     { header: '사유 + 계산근거', key: 'reason', width: 70 },
-    { header: '차이(원)', key: 'diff', width: 14, style: { numFmt: '#,##0;[Red]-#,##0' } },
+    // V15.2 — A5 시간대별 차이 kWh + 단가 + 금액 (A5 케이스에서만 채워짐)
+    { header: '경부하 차이(kWh)', key: 'lightDiff', width: 14, style: { numFmt: '#,##0;[Red]-#,##0' } },
+    { header: '경부하 환급(원)', key: 'lightRefund', width: 13, style: { numFmt: '#,##0' } },
+    { header: '중부하 차이(kWh)', key: 'midDiff', width: 14, style: { numFmt: '#,##0;[Red]-#,##0' } },
+    { header: '중부하 환급(원)', key: 'midRefund', width: 13, style: { numFmt: '#,##0' } },
+    { header: '최대부하 차이(kWh)', key: 'peakDiff', width: 14, style: { numFmt: '#,##0;[Red]-#,##0' } },
+    { header: '최대부하 환급(원)', key: 'peakRefund', width: 13, style: { numFmt: '#,##0' } },
+    { header: '총 환급액(원)', key: 'diff', width: 14, style: { numFmt: '#,##0;[Red]-#,##0' } },
     { header: '가산금', key: 'surcharge', width: 12, style: { numFmt: '#,##0' } },
     { header: '초과요금', key: 'excess', width: 12, style: { numFmt: '#,##0' } },
   ];
@@ -6107,14 +6183,28 @@ window.downloadKpiExcel = async function(type) {
       return true;
     });
     const mainIss = mainIssues[0] || {};
-    const allReasons = mainIssues.map(i => `[${i.code}] ${i.reason || ''}${i.detail ? '\n' + i.detail : ''}`).join('\n---\n');
+    let allReasons = mainIssues.map(i => `[${i.code}] ${i.reason || ''}${i.detail ? '\n' + i.detail : ''}`).join('\n---\n');
     const totalDiff = mainIssues.reduce((s, i) => s + (i.diff || 0), 0);
+    // V15.3 #2 — mainIssues가 비어있고 초과요금만 있는 row: 사유 자동 생성
+    //   (예: trusted/allCandidate/extras 다운로드에서 발생)
+    if (!allReasons && b.초과요금 > 0) {
+      allReasons = `[초과요금] 초과사용부가금 ${fmt(b.초과요금)}원 발생\n계약전력 ${b.계약전력}kW 초과 사용으로 인한 한전 추가 청구 (환급 대상)`;
+    } else if (!allReasons && b.가산금 > 0) {
+      allReasons = `[가산금] 가산금 ${fmt(b.가산금)}원 발생 (정보 표시 — 환급 대상 아님)`;
+    }
+    // V15.2 정정 — 환급분류 결정: A5 우선, 없으면 A2/A2p/A3 있으면 "신뢰"
     const a5 = mainIssues.find(i => i.code === 'A5');
+    const baseFee = mainIssues.find(i => i.code === 'A2' || i.code === 'A2p' || i.code === 'A3');
     let tier = '';
     if (a5) {
       if (a5.refundTier === 'trusted') tier = '신뢰';
       else if (a5.refundTier === 'review') tier = '확인필요';
       else if (a5.refundTier === 'excluded') tier = '제외(B등급)';
+      else tier = a5.dashTrusted ? '신뢰' : '확인필요';  // V14 호환
+    } else if (baseFee) {
+      tier = '신뢰';  // 기본요금 과다는 무조건 환급 대상 (빌코리아 vs 빌코리아 비교)
+    } else if (b.초과요금 > 0) {
+      tier = '신뢰';  // 초과요금도 환급 대상
     }
 
     const row = ws.addRow({
@@ -6130,6 +6220,13 @@ window.downloadKpiExcel = async function(type) {
       tier: tier,
       code: mainIssues.map(i => i.code).join('/'),
       reason: allReasons,
+      // V15.2 — A5 시간대별 세부 (A5 이슈가 있을 때만 채워짐)
+      lightDiff: a5 && a5.lightDiff != null ? a5.lightDiff : '',
+      lightRefund: a5 && a5.refundLight != null ? a5.refundLight : '',
+      midDiff: a5 && a5.midDiff != null ? a5.midDiff : '',
+      midRefund: a5 && a5.refundMid != null ? a5.refundMid : '',
+      peakDiff: a5 && a5.peakDiff != null ? a5.peakDiff : '',
+      peakRefund: a5 && a5.refundPeak != null ? a5.refundPeak : '',
       diff: totalDiff,
       surcharge: b.가산금 || 0,
       excess: b.초과요금 || 0,
@@ -6145,7 +6242,7 @@ window.downloadKpiExcel = async function(type) {
       row.getCell('diff').font = { bold: true, color: { argb: 'FFB91C1C' } };
     }
   }
-  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: filtered.length + 1, column: 15 } };
+  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: filtered.length + 1, column: 21 } };
 
   const buf = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
